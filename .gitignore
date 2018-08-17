@@ -1,0 +1,8 @@
+.vscode/
+
+venv/
+__pycache__/
+.python-version
+
+config.py
+app.db
