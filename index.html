@@ -7,7 +7,6 @@
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.3.3/dist/leaflet.css" integrity="sha512-Rksm5RenBEKSKFjgI3a41vrjkw4EVPlJ3+OiI65vTjIdo9brlAacEuKOiQ5OFh7cOI1bkDwLqdLw3Zg0cRJAAQ==" crossorigin=""/>
     <script src="https://unpkg.com/leaflet@1.3.3/dist/leaflet.js" integrity="sha512-tAGcCfR4Sc5ZP5ZoVz0quoZDYX5aCtEm/eu1KhSLj2c9eFrylXZknQYmxUssFaVJKvvc0dJQixhGjG2yXWiV9Q==" crossorigin=""></script>
-    <script src="script.js"></script>
 </head>
 <body>
   <div class="wrapper">
@@ -28,21 +27,7 @@
       L.tileLayer('https://{s}.tile.osm.org/{z}/{x}/{y}.png', {
         attribution: '&copy; <a href="https://osm.org/copyright">OpenStreetMap</a> contributors'
       }).addTo(map);
-
-      document.getElementById('proceed-button').onclick = function() {
-        let listCoordinates = document.getElementById('list-coordinates');
-        listCoordinates.value = listCoordinates.value.replace(/\t/g, ' ');
-        let listMarker = listCoordinates.value.split('\n').reduce(
-          (accur, curr) => accur.concat(unpackCoordinates(curr)),
-          []
-        ).filter(coordinate =>
-            coordinate.lat !== undefined && coordinate.lon !== undefined
-        );
-        for (let coordinate of listMarker) {
-          L.marker([coordinate.lat, coordinate.lon]).addTo(map);
-        }
-        map.panTo(new L.LatLng(listMarker[0].lat, listMarker[0].lon));
-      }
-    </script>
+  </script>
+  <script src="script.js"></script>
 </body>
 </html>
