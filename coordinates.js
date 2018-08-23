@@ -9,14 +9,14 @@ class Coordinates {
         "lat": c1.lat,
         "lon": c1.lon,
         "neighbor": [],
-      }
+      };
     }
     if (this.list[c2.label] === undefined) {
       this.list[c2.label] = {
         "lat": c2.lat,
         "lon": c2.lon,
         "neighbor": [],
-      }
+      };
     }
     if (this.list[c1.label].neighbor.includes(c2.label) === false) {
       this.list[c1.label].neighbor.push(c2.label);
@@ -51,6 +51,6 @@ function HaversineFormula(lat1, lon1, lat2, lon2) {
   return 2 * R * c;
 
   function deg2rad(deg) {
-    return deg * (Math.PI/180)
+    return deg * (Math.PI/180);
   }
 }

@@ -46,5 +46,5 @@ function addMarkerToMap() {
     };
 
     reader.readAsText(selectedFile);
-  }
+  };
 })();
