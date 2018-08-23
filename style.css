@@ -23,6 +23,12 @@ body {
   padding: 1rem 1.2rem;
 }
 
+.main label {
+  margin-bottom: 0.4rem;
+  display: inline-block;
+  margin-top: 1rem;
+}
+
 .main textarea#list-coordinates {
   width: 100%;
   resize: none;

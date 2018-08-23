@@ -30,3 +30,21 @@ function addMarkerToMap() {
   }
   map.panTo(new L.LatLng(listMarker[0].lat, listMarker[0].lon));
 }
+
+
+(function readFileInput(){
+  let file = document.getElementById('file');
+  file.onchange = function() {
+    const selectedFile = file.files[0];
+    const reader = new FileReader();
+
+    reader.onload = function(fi) {
+      let listCoordinates = document.getElementById('list-coordinates');
+      // Each column from csv file is seperated by comma
+      // We need to replace it with space so that we can filter it later
+      listCoordinates.value = fi.target.result.replace(/,/g, ' ');
+    };
+
+    reader.readAsText(selectedFile);
+  }
+})();
