@@ -15,6 +15,7 @@
 	"extends": "eslint:recommended",
   "globals": {
     "L": true,
-    "map": true
+    "map": true,
+    "markerGroup": true
   }
 }
