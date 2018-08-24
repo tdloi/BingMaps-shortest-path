@@ -16,6 +16,7 @@
   "globals": {
     "L": true,
     "map": true,
-    "markerGroup": true
+    "markerGroup": true,
+    "C": true
   }
 }
