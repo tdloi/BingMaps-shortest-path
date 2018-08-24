@@ -30,14 +30,15 @@ function processData() {
   let listMarker = [];
   for (let pairCoordinate of listCoordinates) {
     let [c1, c2] = splitPairCoordinate(pairCoordinate);
+    let index = listMarker.length === 0 ? 0 : listMarker[listMarker.length - 1];
     c1 = convertStringCoordinateToObject(c1);
-    c1 = new Coordinate(listMarker.length + 1, c1.lat, c1.lon);
+    c1 = new Coordinate(index + 1, c1.lat, c1.lon);
     c2 = convertStringCoordinateToObject(c2);
-    c2 = new Coordinate(listMarker.length + 2, c2.lat, c2.lon);
+    c2 = new Coordinate(index + 2, c2.lat, c2.lon);
 
     if (c1.isValid() && c2.isValid() ){
-      if (C.isExisted(c1)) { c1.label = C.findCoordinate(c1); }
-      if (C.isExisted(c2)) { c2.label = C.findCoordinate(c2); }
+      if (C.isExisted(c1)) { c1.label = +C.findCoordinate(c1); } // force label to number
+      if (C.isExisted(c2)) { c2.label = +C.findCoordinate(c2); }
 
       if (listMarker.includes(c1.label) === false) { listMarker.push(c1.label); }
       if (listMarker.includes(c2.label) === false) { listMarker.push(c2.label); }
