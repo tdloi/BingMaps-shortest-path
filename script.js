@@ -9,41 +9,73 @@ function splitPairCoordinate(pairCoordinate) {
 
 function convertStringCoordinateToObject(stringCoordinate) {
   let [lat, lon] = stringCoordinate.split(' ');
-  return [{
-    "lat": lat,
-    "lon": lon,
-  }];
+  return {
+    "lat": Number(lat),
+    "lon": Number(lon),
+  };
 }
 
 (function addButtonProceedEventHandle() {
   let buttonProceed = document.getElementById('proceed-button');
-  buttonProceed.addEventListener('click', addMarkerToMap);
+  buttonProceed.addEventListener('click', processData);
 })();
 
-function addMarkerToMap() {
+function processData() {
   let listCoordinates = document.getElementById('list-coordinates');
   listCoordinates.value = listCoordinates.value.replace(/\t/g, ' ');
-  let uniqueCoordinateString = listCoordinates.value.split('\n').reduce(
-    (accur, curr) => accur.concat(splitPairCoordinate(curr)),
-    []
-  ).filter(
-    (curr, index, self) => self.indexOf(curr) === index
-  );
-  let listMarker = uniqueCoordinateString.reduce(
-    (acc, curr) => acc.concat(convertStringCoordinateToObject(curr)),
-    []
-  ).filter(
-    coordinate => coordinate.lat !== 'undefined' && coordinate.lon !== 'undefined'
+  listCoordinates = listCoordinates.value.split('\n').filter(
+    value => value !== ""
   );
 
-  markerGroup.clearLayers();
-  for (let coordinate of listMarker) {
-    L.marker([coordinate.lat, coordinate.lon]).addTo(markerGroup);
+  let listMarker = [];
+  for (let pairCoordinate of listCoordinates) {
+    let [c1, c2] = splitPairCoordinate(pairCoordinate);
+    c1 = convertStringCoordinateToObject(c1);
+    c1 = new Coordinate(listMarker.length + 1, c1.lat, c1.lon);
+    c2 = convertStringCoordinateToObject(c2);
+    c2 = new Coordinate(listMarker.length + 2, c2.lat, c2.lon);
+
+    if (c1.isValid() && c2.isValid() ){
+      if (C.isExisted(c1)) { c1.label = C.findCoordinate(c1); }
+      if (C.isExisted(c2)) { c2.label = C.findCoordinate(c2); }
+
+      if (listMarker.includes(c1.label) === false) { listMarker.push(c1.label); }
+      if (listMarker.includes(c2.label) === false) { listMarker.push(c2.label); }
+
+      C.addCoordinates(c1, c2);
+    }
   }
-  markerGroup.addTo(map);
-  map.panTo(new L.LatLng(listMarker[0].lat, listMarker[0].lon));
+  addMarkerToMap(listMarker);
+  drawPolyline();
 }
 
+function addMarkerToMap(listMarker) {
+  markerGroup.clearLayers();
+  let marker = C.list;
+  for (let c of listMarker) {
+    L.marker([marker[c].lat, marker[c].lon]).addTo(markerGroup)
+      .bindPopup(`${marker[c].lat}, ${marker[c].lon}`);
+  }
+  markerGroup.addTo(map);
+  map.panTo(new L.LatLng(marker[listMarker[0]].lat, marker[listMarker[0]].lon));
+}
+
+function drawPolyline() {
+  let drewCoordinates = [];
+  let listMarker = Object.keys(C.list);
+  let Marker = C.list;
+  for (let c of listMarker) {
+    let neighbors = Object.keys(Marker[c].neighbors);
+    neighbors = neighbors.filter(n => drewCoordinates.includes(n) === false);
+    let latlngs = neighbors.map(
+      coordinate => [
+        [Marker[c].lat, Marker[c].lon],
+        [Marker[coordinate].lat, Marker[coordinate].lon]
+      ]
+    );
+    L.polyline(latlngs, {colors: 'blue'}).addTo(markerGroup);
+  }
+}
 
 (function readFileInput(){
   let file = document.getElementById('file');
