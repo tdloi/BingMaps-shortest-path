@@ -21,6 +21,7 @@ function convertStringCoordinateToObject(stringCoordinate) {
 })();
 
 function processData() {
+  C.list = {}; // Clear list coordinate
   let listCoordinates = document.getElementById('list-coordinates');
   listCoordinates.value = listCoordinates.value.replace(/\t/g, ' ');
   listCoordinates = listCoordinates.value.split('\n').filter(
@@ -46,12 +47,12 @@ function processData() {
       C.addCoordinates(c1, c2);
     }
   }
+  markerGroup.clearLayers();
   addMarkerToMap(listMarker);
   drawPolyline();
 }
 
 function addMarkerToMap(listMarker) {
-  markerGroup.clearLayers();
   let marker = C.list;
   for (let c of listMarker) {
     L.marker([marker[c].lat, marker[c].lon]).addTo(markerGroup)
