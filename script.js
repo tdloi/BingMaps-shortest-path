@@ -38,7 +38,10 @@ function processData() {
     c2 = new Coordinate(index + 2, c2.lat, c2.lon);
 
     if (c1.isValid() && c2.isValid() ){
-      if (C.isExisted(c1)) { c1.label = +C.findCoordinate(c1); } // force label to number
+      if (C.isExisted(c1)) {
+        c1.label = +C.findCoordinate(c1);
+        c2.label = index + 1;
+      }
       if (C.isExisted(c2)) { c2.label = +C.findCoordinate(c2); }
 
       if (listMarker.includes(c1.label) === false) { listMarker.push(c1.label); }
@@ -85,7 +88,7 @@ function drawPolyline(listMarker, color = 'blue', drawAll = true) {
       neighbors = neighbors.filter(n => drewCoordinates.includes(n) === false);
     } else {
         neighbors = [];
-        let index = listMarker.indexOf(c)
+        let index = listMarker.indexOf(c);
         if (index !== listMarker.length - 1) {
             neighbors.push(listMarker[index + 1]);
         }
