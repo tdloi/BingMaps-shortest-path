@@ -49,7 +49,7 @@ function processData() {
   }
   markerGroup.clearLayers();
   addMarkerToMap(listMarker);
-  drawPolyline();
+  drawPolyline(listMarker);
 }
 
 function addMarkerToMap(listMarker) {
@@ -62,9 +62,8 @@ function addMarkerToMap(listMarker) {
   map.panTo(new L.LatLng(marker[listMarker[0]].lat, marker[listMarker[0]].lon));
 }
 
-function drawPolyline() {
+function drawPolyline(listMarker, color = 'blue') {
   let drewCoordinates = [];
-  let listMarker = Object.keys(C.list);
   let Marker = C.list;
   for (let c of listMarker) {
     let neighbors = Object.keys(Marker[c].neighbors);
@@ -75,7 +74,7 @@ function drawPolyline() {
         [Marker[coordinate].lat, Marker[coordinate].lon]
       ]
     );
-    L.polyline(latlngs, {colors: 'blue'}).addTo(markerGroup);
+    L.polyline(latlngs, {color: color}).addTo(markerGroup);
   }
 }
 
