@@ -62,12 +62,21 @@ function addMarkerToMap(listMarker) {
   map.panTo(new L.LatLng(marker[listMarker[0]].lat, marker[listMarker[0]].lon));
 }
 
-function drawPolyline(listMarker, color = 'blue') {
+function drawPolyline(listMarker, color = 'blue', drawAll = true) {
   let drewCoordinates = [];
   let Marker = C.list;
   for (let c of listMarker) {
-    let neighbors = Object.keys(Marker[c].neighbors);
-    neighbors = neighbors.filter(n => drewCoordinates.includes(n) === false);
+    let neighbors;
+    if (drawAll) {
+      neighbors = Object.keys(Marker[c].neighbors);
+      neighbors = neighbors.filter(n => drewCoordinates.includes(n) === false);
+    } else {
+        neighbors = [];
+        let index = listMarker.indexOf(c)
+        if (index !== listMarker.length - 1) {
+            neighbors.push(listMarker[index + 1]);
+        }
+    }
     let latlngs = neighbors.map(
       coordinate => [
         [Marker[c].lat, Marker[c].lon],
