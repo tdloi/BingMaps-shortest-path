@@ -50,6 +50,19 @@ function processData() {
   markerGroup.clearLayers();
   addMarkerToMap(listMarker);
   drawPolyline(listMarker);
+
+  // Find shortest path
+  let _map = {};
+  for (let m of Object.keys(C.list).map(key => parseInt(key, 10))) {
+    _map[m] = C.list[m].neighbors;
+  }
+  let g = new Graph(_map);
+  drawPolyline(
+    g.findShortestPath(listMarker[0], listMarker[listMarker.length - 1])
+      .map(value => parseInt(value)),
+    'red',
+    false
+  );
 }
 
 function addMarkerToMap(listMarker) {
