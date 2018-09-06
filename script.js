@@ -56,8 +56,8 @@ function processData() {
 
   // Find shortest path
   let _map = {};
-  for (let m of Object.keys(C.list).map(key => parseInt(key, 10))) {
-    _map[m] = C.list[m].neighbors;
+  for (let marker of Object.keys(C.list).map(key => parseInt(key, 10))) {
+    _map[marker] = C.list[marker].neighbors;
   }
   let g = new Graph(_map);
   drawPolyline(
@@ -81,22 +81,22 @@ function addMarkerToMap(listMarker) {
 function drawPolyline(listMarker, color = 'blue', drawAll = true) {
   let drewCoordinates = [];
   let Marker = C.list;
-  for (let c of listMarker) {
+  for (let currentMarker of listMarker) {
     let neighbors;
     if (drawAll) {
-      neighbors = Object.keys(Marker[c].neighbors);
+      neighbors = Object.keys(Marker[currentMarker].neighbors);
       neighbors = neighbors.filter(n => drewCoordinates.includes(n) === false);
     } else {
         neighbors = [];
-        let index = listMarker.indexOf(c);
+        let index = listMarker.indexOf(currentMarker);
         if (index !== listMarker.length - 1) {
             neighbors.push(listMarker[index + 1]);
         }
     }
     let latlngs = neighbors.map(
-      coordinate => [
-        [Marker[c].lat, Marker[c].lon],
-        [Marker[coordinate].lat, Marker[coordinate].lon]
+      neighborMarker => [
+        [Marker[currentMarker].lat, Marker[currentMarker].lon],
+        [Marker[neighborMarker].lat, Marker[neighborMarker].lon]
       ]
     );
     L.polyline(latlngs, {color: color}).addTo(markerGroup);
