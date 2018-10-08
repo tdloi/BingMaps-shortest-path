@@ -4,7 +4,7 @@ A simple application implements Dijkstra algorithm to find the shortest path bet
 
 ## Usage
 - Go to https://tdloi.github.io/simple-shortest-path
-- Input a list of coordinates, with two coordinates on each row, each coordinate includes latitude and lontitude seperate by a space (or on each column if load from csv files)
+- Input a list of coordinates, each line contains three value: coordinate names, latitude and lontitude. If radius is not resented, a random value will be generated. This radius value is used for determining adjacent vertices, vertices within radius of a vertex will become its adjacent vertex.
 
 ## License
 Source code of this project is licensed under [MIT license](LICENSE)
