@@ -3,21 +3,20 @@ class Coordinates {
     this.list = list;
   }
 
-  addCoordinates(c1, c2) {
-    if (this.list[c1.label] === undefined) {
-      this.list[c1.label] = {
-        "lat": c1.lat,
-        "lon": c1.lon,
+  addCoordinate(c) {
+    if (this.list[c.label] === undefined) {
+      if (c.name === undefined) c.name = c.label;
+      this.list[c.label] = {
+        "label": c.label,
+        "name": c.name,
+        "lat": c.lat,
+        "lon": c.lon,
         "neighbors": {},
       };
     }
-    if (this.list[c2.label] === undefined) {
-      this.list[c2.label] = {
-        "lat": c2.lat,
-        "lon": c2.lon,
-        "neighbors": {},
-      };
-    }
+  }
+
+  addNeighbor(c1, c2) {
     let listNeighbors = Object.keys(this.list[c1.label].neighbors);
     if (listNeighbors.includes(c2.label) === false) {
       let distance = HaversineFormula(c1, c2);
@@ -46,17 +45,19 @@ class Coordinates {
       }
     }
   }
+
 }
 
 class Coordinate {
-  constructor(label, lat, lon) {
+  constructor(label, name, lat, lon) {
     this.label = label;
+    this.name = name;
     this.lat = lat;
     this.lon = lon;
   }
 
   isValid() {
-    if (typeof(this.lat) !== "number" || typeof(this.lon) !== "number") return false;
+    if (typeof(+this.lat) !== "number" || typeof(+this.lon) !== "number") return false;
     if (this.lat <= 0  || this.lat > 90) return false;
     if (this.lon <= 90 || this.lon > 180) return false;
 

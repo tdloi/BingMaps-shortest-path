@@ -1,18 +1,20 @@
-function splitPairCoordinate(pairCoordinate) {
-  let listCoordinates = pairCoordinate.split(' ');
-  listCoordinates = listCoordinates.filter(value => value !== "");
-  return [
-    `${listCoordinates[0]} ${listCoordinates[1]}`,
-    `${listCoordinates[2]} ${listCoordinates[3]}`
-  ];
+function getRadius() {
+  let r = document.querySelector('.coordinate__radius');
+  if (r.value === "") {
+    return Math.random()*90 + 10;
+  }
+  return +r.value;
 }
+const radius = getRadius();
 
-function convertStringCoordinateToObject(stringCoordinate) {
-  let [lat, lon] = stringCoordinate.split(' ');
-  return {
-    "lat": Number(lat),
-    "lon": Number(lon),
-  };
+
+function convertDataToCoordinate(raw) {
+  // Each string includes: Coordinate name, Latitude, Lontitude
+  // seperated by a space, so to avoid space in name, we need get
+  // lat and lon first
+  raw = raw.split(' ');
+  let [lat, lon] = raw.splice(-2, 2);
+  return new Coordinate(undefined, raw.join(' '), lat, lon);
 }
 
 (function addButtonProceedEventHandle() {
@@ -20,36 +22,38 @@ function convertStringCoordinateToObject(stringCoordinate) {
   buttonProceed.addEventListener('click', processData);
 })();
 
+
 function processData() {
   C.list = {}; // Clear list coordinate
-  let listCoordinates = document.getElementById('list-coordinates');
-  listCoordinates.value = listCoordinates.value.replace(/\t/g, ' ');
-  listCoordinates = listCoordinates.value.split('\n').filter(
-    value => value !== ""
-  );
-
+  let listCoordinates = document.getElementById('list-coordinates').value
+                          .replace(/\t/g, ' ')
+                          .split('\n').filter( value => value !== "" );
   let listMarker = [];
-  for (let pairCoordinate of listCoordinates) {
-    let [c1, c2] = splitPairCoordinate(pairCoordinate);
+
+  for (let rawCoordinate of listCoordinates) {
+    let c = convertDataToCoordinate(rawCoordinate);
     let index = listMarker.length === 0 ? 0 : listMarker[listMarker.length - 1];
-    c1 = convertStringCoordinateToObject(c1);
-    c1 = new Coordinate(index + 1, c1.lat, c1.lon);
-    c2 = convertStringCoordinateToObject(c2);
-    c2 = new Coordinate(index + 2, c2.lat, c2.lon);
-
-    if (c1.isValid() && c2.isValid() ){
-      if (C.isExisted(c1)) {
-        c1.label = +C.findCoordinate(c1);
-        c2.label = index + 1;
+    c.label = index + 1;
+    if (c.isValid()) {
+      if (C.isExisted(c)) c.label = +C.findCoordinate(c);
+      if (listMarker.includes(c.label) === false) {
+        listMarker.push(c.label);
       }
-      if (C.isExisted(c2)) { c2.label = +C.findCoordinate(c2); }
-
-      if (listMarker.includes(c1.label) === false) { listMarker.push(c1.label); }
-      if (listMarker.includes(c2.label) === false) { listMarker.push(c2.label); }
-
-      C.addCoordinates(c1, c2);
+      C.addCoordinate(c);
     }
   }
+
+  let _markers = [...listMarker];
+  while(_markers.length > 0) {
+    let c = _markers.pop();
+    for (let coordinate of _markers) {
+      let c1 = C.list[c];
+      let c2 = C.list[coordinate];
+      if ( HaversineFormula(c1, c2) <= radius )
+        C.addNeighbor(c1, c2);
+    }
+  }
+
   markerGroup.clearLayers();
   addMarkerToMap(listMarker);
   drawPolyline(listMarker);
@@ -72,10 +76,11 @@ function addMarkerToMap(listMarker) {
   let marker = C.list;
   for (let c of listMarker) {
     L.marker([marker[c].lat, marker[c].lon]).addTo(markerGroup)
-      .bindPopup(`${marker[c].lat}, ${marker[c].lon}`);
+      .bindPopup(`<strong>${marker[c].name}</strong><br>
+                  ${marker[c].lat}, ${marker[c].lon}`);
   }
   markerGroup.addTo(map);
-  map.panTo(new L.LatLng(marker[listMarker[0]].lat, marker[listMarker[0]].lon));
+  panToMarker(marker[listMarker[0]].lat, marker[listMarker[0]].lon);
 }
 
 function drawPolyline(listMarker, color = 'blue', drawAll = true) {
@@ -84,23 +89,29 @@ function drawPolyline(listMarker, color = 'blue', drawAll = true) {
   for (let currentMarker of listMarker) {
     let neighbors;
     if (drawAll) {
-      neighbors = Object.keys(Marker[currentMarker].neighbors);
-      neighbors = neighbors.filter(n => drewCoordinates.includes(n) === false);
+      neighbors = Object.keys(Marker[currentMarker].neighbors)
+                    .filter(n => drewCoordinates.includes(n) === false);
     } else {
-        neighbors = [];
-        let index = listMarker.indexOf(currentMarker);
-        if (index !== listMarker.length - 1) {
-            neighbors.push(listMarker[index + 1]);
-        }
+      neighbors = [];
+      let index = listMarker.indexOf(currentMarker);
+      if (index !== listMarker.length - 1) {
+        neighbors.push(listMarker[index + 1]);
+      }
     }
+
     let latlngs = neighbors.map(
       neighborMarker => [
         [Marker[currentMarker].lat, Marker[currentMarker].lon],
         [Marker[neighborMarker].lat, Marker[neighborMarker].lon]
       ]
     );
+
     L.polyline(latlngs, {color: color}).addTo(markerGroup);
   }
+}
+
+function panToMarker(lat, lon) {
+  map.panTo(new L.LatLng(lat, lon));
 }
 
 (function readFileInput(){
