@@ -23,6 +23,7 @@ function convertDataToCoordinate(raw) {
 
 function processData() {
   const radius = getRadius();
+  document.querySelector('.coordinate__radius').value = radius;
   C.list = {}; // Clear list coordinate
   let listCoordinates = document.getElementById('list-coordinates').value
                           .replace(/\t/g, ' ')
