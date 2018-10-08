@@ -5,8 +5,6 @@ function getRadius() {
   }
   return +r.value;
 }
-const radius = getRadius();
-
 
 function convertDataToCoordinate(raw) {
   // Each string includes: Coordinate name, Latitude, Lontitude
@@ -24,6 +22,7 @@ function convertDataToCoordinate(raw) {
 
 
 function processData() {
+  const radius = getRadius();
   C.list = {}; // Clear list coordinate
   let listCoordinates = document.getElementById('list-coordinates').value
                           .replace(/\t/g, ' ')
