@@ -2,12 +2,10 @@ html {
   box-sizing: border-box;
   font-size: 100%;
 }
-
-*, *::before, *::after {
-  box-sizing: inherit;
-}
+*, *::before, *::after { box-sizing: inherit; }
 
 body {
+  font-family: 'Lato', sans-serif;
   width: 100vw;
   height: 100vh;
 }
@@ -18,42 +16,87 @@ body {
   display: grid;
   grid-template-columns: 70% 30%;
 }
-
 .main {
   padding: 1rem 1.2rem;
 }
-
 .main label {
   margin-bottom: 0.4rem;
   display: inline-block;
   margin-top: 1rem;
 }
 
-.main textarea#list-coordinates {
-  width: 100%;
-  resize: none;
-  min-height: 200px;
-  height: 500px;
-  line-height: 1.2em;
-  padding: 0.7em 0.5em;
+.coordinates__radius {
+  margin-left: 1rem;
+  margin-right: 0.1rem;
+  width: 20%;
+  height: 2rem;
+  text-align: right;
+  padding: 0 0.5rem;
+  word-spacing: 0.2rem;
 }
-.main textarea#list-coordinates:focus {
+
+.coordinates__list {
+  width: 100%;
+  max-width: 100%;
+  padding: 0.7rem 0.5rem;
+  line-height: 1.3rem;
+}
+.coordinates__list:focus {
   outline: solid 2px #c2daf6;
   border: solid 1px #2188ff;
 }
 
-.main button#proceed-button {
-  margin: 1rem;
-  padding: 0.5em 1.5rem;
-  background: #4ddb7f;
-  border: solid 2px #4ddb7f;
+/* Hide spine button
+ */
+/* Firefox */
+input[type=number] {
+  -moz-appearance: textfield;
 }
-.main button#proceed-button:focus,
-.main button#proceed-button:active {
-  background: #34d16b;
-  border: none;
+/* Chrome and Safari */
+input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0; /* Removes leftover margin */
 }
+
+
 .function-area {
   display: flex;
-  justify-content: center;
+  justify-content: space-around;
+}
+.main__button {
+  margin: 1rem;
+  padding: 0.5em 2rem;
+  background-color: whitesmoke;
+  border: none;
+  border: solid 2px transparent;
+}
+
+.main__button--green {
+  background: #4ddb7f;
+  border-color: #4ddb7f;
+}
+.main__button--green:focus,
+.main__button--green:active {
+  background: #30bb61;
+}
+
+.main__button--red {
+  background: rgb(231, 117, 117);
+  border-color: rgb(231, 117, 117);
+}
+.main__button--red:focus,
+.main__button--red:active {
+  background: rgb(224, 88, 88);
+}
+
+.error {
+  margin: 0.2rem;
+  color: rgb(230, 98, 98);
+}
+input:invalid {
+  border: solid 2px rgb(230, 98, 98);
+}
+input:invalid:focus {
+  outline: solid 2px rgb(230, 98, 98);
 }

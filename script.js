@@ -1,9 +1,7 @@
-function getRadius() {
-  let r = document.querySelector('.coordinate__radius');
-  if (r.value === "") {
-    return Math.random()*90 + 10;
-  }
-  return +r.value;
+"use strict";
+
+function random(min, max) {
+  return (Math.random()*(max-min) + min).toFixed(2);
 }
 
 function convertDataToCoordinate(raw) {
@@ -15,17 +13,18 @@ function convertDataToCoordinate(raw) {
   return new Coordinate(undefined, raw.join(' '), lat, lon);
 }
 
-(function addButtonProceedEventHandle() {
-  let buttonProceed = document.getElementById('proceed-button');
-  buttonProceed.addEventListener('click', processData);
-})();
-
 
 function processData() {
-  const radius = getRadius();
-  document.querySelector('.coordinate__radius').value = radius;
+  const radius = function() {
+    let r = document.querySelector('.coordinates__radius');
+    if (r.value === "") {
+      r.value = random(10, 100);
+    }
+    return +r.value;
+  }();
+
   C.list = {}; // Clear list coordinate
-  let listCoordinates = document.getElementById('list-coordinates').value
+  let listCoordinates = document.querySelector('.coordinates__list').value
                           .replace(/\t/g, ' ')
                           .split('\n').filter( value => value !== "" );
   let listMarker = [];
@@ -115,13 +114,13 @@ function panToMarker(lat, lon) {
 }
 
 (function readFileInput(){
-  let file = document.getElementById('file');
+  let file = document.getElementById('csv-file');
   file.onchange = function() {
     const selectedFile = file.files[0];
     const reader = new FileReader();
 
     reader.onload = function(fi) {
-      let listCoordinates = document.getElementById('list-coordinates');
+      let listCoordinates = document.querySelector('.coordinates__list');
       // Each column from csv file is seperated by comma
       // We need to replace it with space so that we can filter it later
       listCoordinates.value = fi.target.result.replace(/,/g, ' ');
@@ -130,3 +129,32 @@ function panToMarker(lat, lon) {
     reader.readAsText(selectedFile);
   };
 })();
+
+function clearInput() {
+  document.querySelectorAll('input').forEach(
+    node => node.value = ""
+  );
+  document.querySelectorAll('.error').forEach(
+    node => node.innerText = ""
+  );
+  document.querySelector('.coordinates__list').value = "";
+}
+
+const main = document.querySelector('.main');
+main.addEventListener('click', function(event) {
+  let target = event.target;
+  if (target.classList.contains('main__button__clear')) {
+    clearInput();
+  } else if (target.classList.contains('main__button__proceed')) {
+    // Validate input using HTML5 Constraint validation API
+    const radius = document.querySelector('.coordinates__radius');
+    const list = document.querySelector('.coordinates__list');
+    if (radius.validity.valid === false ||
+        list.validity.valid === false) {
+        document.querySelector('.coordinates__radius__error').innerText = radius.validationMessage;
+        document.querySelector('.coordinates__list__error').innerText = list.validationMessage;
+    } else {
+      processData();
+    }
+  }
+});
