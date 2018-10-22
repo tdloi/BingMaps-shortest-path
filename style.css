@@ -1,3 +1,7 @@
+:root {
+  --green: #4ddb7f;
+}
+
 html {
   box-sizing: border-box;
   font-size: 100%;
@@ -15,6 +19,9 @@ body {
   height: 100%;
   display: grid;
   grid-template-columns: 70% 30%;
+}
+main {
+  overflow-y: scroll;
 }
 .main {
   padding: 1rem 1.2rem;
@@ -99,4 +106,23 @@ input:invalid {
 }
 input:invalid:focus {
   outline: solid 2px rgb(230, 98, 98);
+}
+
+.selection__items {
+  background: whitesmoke;
+  border: solid 1px #333;
+  border-radius: 5px;
+  padding: 0.5rem 1rem;
+  text-align: center;
+  margin: 0.5rem 1rem;
+}
+
+.selection__items--selected {
+  background: var(--green);
+}
+
+.loading {
+  text-align: center;
+  position: relative;
+  top: 45vh;
 }

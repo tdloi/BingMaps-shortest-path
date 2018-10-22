@@ -1,4 +1,10 @@
 "use strict";
+const main = document.querySelector('.main');
+const selection = document.querySelector('.selection');
+const selectionList = document.querySelector('.selection__list');
+const loading = document.querySelector('.loading');
+let shortestPathGroup = new L.featureGroup();
+let listSelection = [];
 
 function random(min, max) {
   return (Math.random()*(max-min) + min).toFixed(2);
@@ -24,6 +30,14 @@ function processData() {
   }();
 
   C.list = {}; // Clear list coordinate
+  // Clear list of selection and all of highlighted items
+  listSelection = [];
+  document.querySelectorAll('.selection__items--selected').forEach((target) => {
+    target.classList.remove('selection__items--selected');
+  });
+  selectionList.innerHTML = "";
+
+
   let listCoordinates = document.querySelector('.coordinates__list').value
                           .replace(/\t/g, ' ')
                           .split('\n').filter( value => value !== "" );
@@ -38,6 +52,9 @@ function processData() {
       if (listMarker.includes(c.label) === false) {
         listMarker.push(c.label);
       }
+      selectionList.innerHTML += `
+        <p class="selection__items" data-src="${c.label}">${c.name}</p>
+      `;
       C.addCoordinate(c);
     }
   }
@@ -55,21 +72,45 @@ function processData() {
 
   markerGroup.clearLayers();
   addMarkerToMap(listMarker);
-  drawPolyline(listMarker);
+  // Draw polyline between each marker to map
+  for (let marker of listMarker) {
+    if (marker !== undefined) {
+      drawPolyline( marker,
+                    Object.keys(C.list[marker].neighbors) );
+    }
+  }
 
-  // Find shortest path
-  let _map = {};
-  for (let marker of Object.keys(C.list).map(key => parseInt(key, 10))) {
+  shortestPathGroup.addTo(map);
+}
+
+function drawShortestPath(c1, c2) {
+  // Draw a polyline demonstrate shortest path
+  // between coordinate c1 and c2
+
+  let _map = {}; // Default input of Graph object
+                // a list of object with key is coordinate label and
+                // value is an object contains adjacent vertice
+                // { "1" : { "2", "3", "4" } }
+  for (let marker of Object.keys(C.list)
+                      .map(key => parseInt(key, 10))) {
     _map[marker] = C.list[marker].neighbors;
   }
+
   let g = new Graph(_map);
-  drawPolyline(
-    g.findShortestPath(listMarker[0], listMarker[listMarker.length - 1])
-      .map(value => parseInt(value)),
-    'red',
-    false
-  );
+  let path = g.findShortestPath(c1, c2);
+  shortestPathGroup.clearLayers();
+  for (let marker of path) {
+    let index = path.indexOf(marker);
+    if (index === path.length - 1) return;
+    drawPolyline(
+      marker,
+      [path[index + 1]],
+      'red',
+      shortestPathGroup
+    );
+  }
 }
+
 
 function addMarkerToMap(listMarker) {
   let marker = C.list;
@@ -82,36 +123,36 @@ function addMarkerToMap(listMarker) {
   panToMarker(marker[listMarker[0]].lat, marker[listMarker[0]].lon);
 }
 
-function drawPolyline(listMarker, color = 'blue', drawAll = true) {
-  let drewCoordinates = [];
-  let Marker = C.list;
-  for (let currentMarker of listMarker) {
-    let neighbors;
-    if (drawAll) {
-      neighbors = Object.keys(Marker[currentMarker].neighbors)
-                    .filter(n => drewCoordinates.includes(n) === false);
-    } else {
-      neighbors = [];
-      let index = listMarker.indexOf(currentMarker);
-      if (index !== listMarker.length - 1) {
-        neighbors.push(listMarker[index + 1]);
-      }
-    }
+function drawPolyline(marker, neighbors, color='blue', group=markerGroup) {
+  // draw polyline between a marker and all of its neightbors
+  // neightbors contains list of coordinates label in C
+  let latlngs = neighbors.map(
+    neighborMarker => [
+      [C.list[marker].lat, C.list[marker].lon],
+      [C.list[neighborMarker].lat, C.list[neighborMarker].lon]
+    ]
+  );
 
-    let latlngs = neighbors.map(
-      neighborMarker => [
-        [Marker[currentMarker].lat, Marker[currentMarker].lon],
-        [Marker[neighborMarker].lat, Marker[neighborMarker].lon]
-      ]
-    );
-
-    L.polyline(latlngs, {color: color}).addTo(markerGroup);
-  }
+  L.polyline(latlngs, {color: color}).addTo(group);
 }
+
 
 function panToMarker(lat, lon) {
   map.panTo(new L.LatLng(lat, lon));
 }
+
+
+function openPopup(label) {
+  // Bind and open popup of a marker in map
+  // Currently there are no way to open a binded popup
+  // so we need to re-bind it then use openPopup method
+  let marker = C.list[label];
+  L.marker([marker.lat, marker.lon]).addTo(markerGroup)
+    .bindPopup(`<strong>${marker.name}</strong><br>
+                ${marker.lat}, ${marker.lon}`)
+    .openPopup();
+}
+
 
 (function readFileInput(){
   let file = document.getElementById('csv-file');
@@ -140,7 +181,8 @@ function clearInput() {
   document.querySelector('.coordinates__list').value = "";
 }
 
-const main = document.querySelector('.main');
+
+
 main.addEventListener('click', function(event) {
   let target = event.target;
   if (target.classList.contains('main__button__clear')) {
@@ -154,7 +196,53 @@ main.addEventListener('click', function(event) {
         document.querySelector('.coordinates__radius__error').innerText = radius.validationMessage;
         document.querySelector('.coordinates__list__error').innerText = list.validationMessage;
     } else {
+      loading.hidden = false;
+      main.hidden = true;
       processData();
+      loading.hidden = true;
+      selection.hidden = false;
     }
+  }
+});
+
+selection.addEventListener('click', function button(event) {
+  let target = event.target;
+  if (target.classList.contains('main__button__back')) {
+    selection.hidden = true;
+    main.hidden = false;
+  } else if (target.classList.contains('main__button__new')) {
+    selection.hidden = true;
+    main.hidden = false;
+    clearInput();
+  }
+});
+
+selection.addEventListener('click', function select(e) {
+  let label = e.target.dataset.src;
+  if (!label) return;
+
+  openPopup(label);
+  let lat = C.list[label].lat,
+      lon = C.list[label].lon;
+
+  if (e.target.classList.contains('selection__items--selected')) {
+    panToMarker(lat, lon);
+  } else if (e.target.classList.contains('selection__items')) {
+    e.target.classList.add('selection__items--selected');
+    listSelection.push(label);
+
+    if (listSelection.length === 3) {
+      let popLabel = listSelection.shift();
+      document.querySelectorAll('.selection__items--selected').forEach((target) => {
+        if (target.dataset.src === popLabel) {
+          target.classList.remove('selection__items--selected');
+        }
+      });
+    }
+    if (listSelection.length === 2) {
+      let [c1, c2] = listSelection;
+      drawShortestPath(c1, c2);
+    }
+    panToMarker(lat, lon);
   }
 });
