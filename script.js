@@ -1,22 +1,33 @@
 "use strict";
+
 const main = document.querySelector('.main');
 const selection = document.querySelector('.selection');
 const selectionList = document.querySelector('.selection__list');
 const loading = document.querySelector('.loading');
+
 let shortestPathGroup = new L.featureGroup();
 let listSelection = [];
+
+// let loadElevationFromInput = document.querySelector('.coordinates__load-elevation').checked;
+
 
 function random(min, max) {
   return (Math.random()*(max-min) + min).toFixed(2);
 }
 
+
 function convertDataToCoordinate(raw) {
-  // Each string includes: Coordinate name, Latitude, Lontitude
+  // Each string includes: Coordinate name, Elevation, Latitude, Lontitude
   // seperated by a space, so to avoid space in name, we need get
-  // lat and lon first
+  // lat and lon first then get elevation, if elevation is not available
+  // it will be load from api later
   raw = raw.split(' ');
   let [lat, lon] = raw.splice(-2, 2);
-  return new Coordinate(undefined, raw.join(' '), lat, lon);
+  let ele = 0;
+  // if (loadElevationFromInput) {
+  //   ele = raw.splice(-1, 1);
+  // }
+  return new Coordinate(undefined, raw.join(' '), ele, lat, lon);
 }
 
 
@@ -43,23 +54,40 @@ function processData() {
                           .split('\n').filter( value => value !== "" );
   let listMarker = [];
 
+  document.querySelector('.loading__total').innerText = listCoordinates.length;
+
+  // if this value is 0, elevation will not be load from Elevation Public API
+  let ElevationFilterValue = document.querySelector('.coordinates__elevation').valueAsNumber || 0;
+
   for (let rawCoordinate of listCoordinates) {
     let c = convertDataToCoordinate(rawCoordinate);
     let index = listMarker.length === 0 ? 0 : listMarker[listMarker.length - 1];
     c.label = index + 1;
+    document.querySelector('.loading__current').innerText = c.label;
+
     if (c.isValid()) {
-      if (C.isExisted(c)) c.label = +C.findCoordinate(c);
-      if (listMarker.includes(c.label) === false) {
-        listMarker.push(c.label);
+      if (ElevationFilterValue > 0) {
+        c.ele = random(1, 50);
       }
-      selectionList.innerHTML += `
-        <p class="selection__items" data-src="${c.label}">${c.name}</p>
-      `;
-      C.addCoordinate(c);
+
+      if (c.ele !== undefined && c.ele >= ElevationFilterValue) {
+        if (C.isExisted(c)) c.label = +C.findCoordinate(c);
+        if (listMarker.includes(c.label) === false) {
+          listMarker.push(c.label);
+        }
+        selectionList.innerHTML += `
+          <p class="selection__items" data-src="${c.label}">${c.name}</p>
+        `;
+        C.addCoordinate(c);
+      }
     }
   }
 
+
   let _markers = [...listMarker];
+  // Nested lopp through all coordinate in list then check distant
+  // between two coordinate if their distant smaller radius
+  // they will be treated as adjency vertice
   while(_markers.length > 0) {
     let c = _markers.pop();
     for (let coordinate of _markers) {
@@ -82,6 +110,7 @@ function processData() {
 
   shortestPathGroup.addTo(map);
 }
+
 
 function drawShortestPath(c1, c2) {
   // Draw a polyline demonstrate shortest path
@@ -199,10 +228,13 @@ main.addEventListener('click', function(event) {
   } else if (target.classList.contains('main__button__proceed')) {
     // Validate input using HTML5 Constraint validation API
     const radius = document.querySelector('.coordinates__radius');
+    const elevation = document.querySelector('.coordinates__elevation');
     const list = document.querySelector('.coordinates__list');
     if (radius.validity.valid === false ||
-        list.validity.valid === false) {
+        list.validity.valid === false ||
+        elevation.validity === false) {
         document.querySelector('.coordinates__radius__error').innerText = radius.validationMessage;
+        document.querySelector('.coordinates__elevation__error').innerText = elevation.validationMessage;
         document.querySelector('.coordinates__list__error').innerText = list.validationMessage;
     } else {
       loading.hidden = false;

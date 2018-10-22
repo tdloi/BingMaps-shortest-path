@@ -23,32 +23,43 @@
             <div></div>
             <div></div>
           </div>
+          <div class="loading__progress">
+            Loading <span class="loading__current"></span>/<span class="loading__total"></span>
+          </div>
       </div>
 
       <div class="main">
         <div>
-            <label for="radius">Radius</label>
-            <input type="number" name="radius" class="coordinates__radius" step="0.01" min="1" max="100"> km
-            <p class="error coordinates__radius__error"></p>
-          </div>
-          <div>
-            <label for="csv-file">Load from csv file:</label>
-            <input type="file" id="csv-file" accept=".csv" name="csv-file">
-          </div>
-          <div>
-            <label for="coordinates-list">List of coordinates:</label>
-            <p class="error coordinates__list__error"></p>
-            <textarea type="text"
-                      class="coordinates__list"
-                      name="coordinates-list"
-                      placeholder="Each row contains one coordinates, each value seperate by space&#10;Name  Latitude  Lontitude&#10;Ex: Can Tho 10.1 100.1"
-                      rows="18"
-                      wrap="soft" required ></textarea>
-          </div>
-          <div class="function-area">
-            <button class="main__button main__button--green main__button__proceed">Proceed</button>
-            <button class="main__button main__button--red main__button__clear">Clear</button>
-          </div>
+          <label for="radius">Radius</label>
+          <input type="number" name="radius" class="coordinates__radius" step="0.01" min="1" max="100"> km
+          <p class="error coordinates__radius__error"></p>
+        </div>
+        <div>
+          <label for="elevation">Elevation</label>
+          <input type="number" name="elevation" class="coordinates__elevation" min="1" max="2000"> m
+          <p class="error coordinates__elevation__error"></p>
+        </div>
+        <div>
+          <label for="csv-file">Load from csv file:</label>
+          <input type="file" id="csv-file" accept=".csv" name="csv-file">
+        </div>
+        <div>
+          <label for="coordinates-list">List of coordinates:</label>
+          <!-- <div title="If this box is checked, elevation will not be fetched from public API&#10;If a loaded elevation is not valid, coordinate will be skipped">
+              <input type="checkbox" class="coordinates__load-elevation"> Included elevation in input data
+          </div> -->
+          <p class="error coordinates__list__error"></p>
+          <textarea type="text"
+                    class="coordinates__list"
+                    name="coordinates-list"
+                    placeholder="Each row contains one coordinates, each value seperate by space&#10;Name  Latitude  Lontitude&#10;Ex: Can Tho 10.1 100.1"
+                    rows="18"
+                    wrap="soft" required ></textarea>
+        </div>
+        <div class="function-area">
+          <button class="main__button main__button--green main__button__proceed">Proceed</button>
+          <button class="main__button main__button--red main__button__clear">Clear</button>
+        </div>
       </div>
 
       <div class="selection" hidden>

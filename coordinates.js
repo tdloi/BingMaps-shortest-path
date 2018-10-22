@@ -9,6 +9,7 @@ class Coordinates {
       this.list[c.label] = {
         "label": c.label,
         "name": c.name,
+        "ele": c.ele,
         "lat": c.lat,
         "lon": c.lon,
         "neighbors": {},
@@ -49,9 +50,10 @@ class Coordinates {
 }
 
 class Coordinate {
-  constructor(label, name, lat, lon) {
+  constructor(label, name, ele, lat, lon) {
     this.label = label;
     this.name = name;
+    this.ele = ele;
     this.lat = lat;
     this.lon = lon;
   }

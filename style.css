@@ -32,7 +32,8 @@ main {
   margin-top: 1rem;
 }
 
-.coordinates__radius {
+.coordinates__radius,
+.coordinates__elevation {
   margin-left: 1rem;
   margin-right: 0.1rem;
   width: 20%;
@@ -115,6 +116,7 @@ input:invalid:focus {
   padding: 0.5rem 1rem;
   text-align: center;
   margin: 0.5rem 1rem;
+  cursor: pointer;
 }
 
 .selection__items--selected {
