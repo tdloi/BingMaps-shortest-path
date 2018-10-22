@@ -121,6 +121,9 @@ input:invalid:focus {
   background: var(--green);
 }
 
+.selection__error {
+  margin-left: 1rem;
+}
 .loading {
   text-align: center;
   position: relative;

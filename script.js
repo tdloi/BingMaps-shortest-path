@@ -99,6 +99,15 @@ function drawShortestPath(c1, c2) {
   let g = new Graph(_map);
   let path = g.findShortestPath(c1, c2);
   shortestPathGroup.clearLayers();
+
+  if (path === null) {
+    document.querySelector('.selection__error').innerHTML = `
+      No shortest path found
+    `;
+    return;
+  } else {
+    document.querySelector('.selection__error').innerHTML = "";
+  }
   for (let marker of path) {
     let index = path.indexOf(marker);
     if (index === path.length - 1) return;
