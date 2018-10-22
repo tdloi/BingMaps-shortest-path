@@ -210,10 +210,13 @@ selection.addEventListener('click', function button(event) {
   if (target.classList.contains('main__button__back')) {
     selection.hidden = true;
     main.hidden = false;
+    shortestPathGroup.clearLayers();
   } else if (target.classList.contains('main__button__new')) {
     selection.hidden = true;
     main.hidden = false;
     clearInput();
+    markerGroup.clearLayers();
+    shortestPathGroup.clearLayers();
   }
 });
 
