@@ -8,8 +8,6 @@ const loading = document.querySelector('.loading');
 let shortestPathGroup = new L.featureGroup();
 let listSelection = [];
 
-// let loadElevationFromInput = document.querySelector('.coordinates__load-elevation').checked;
-
 
 function random(min, max) {
   return (Math.random()*(max-min) + min).toFixed(2);
@@ -23,11 +21,7 @@ function convertDataToCoordinate(raw) {
   // it will be load from api later
   raw = raw.split(' ');
   let [lat, lon] = raw.splice(-2, 2);
-  let ele = 0;
-  // if (loadElevationFromInput) {
-  //   ele = raw.splice(-1, 1);
-  // }
-  return new Coordinate(undefined, raw.join(' '), ele, lat, lon);
+  return new Coordinate(undefined, raw.join(' '), 0, lat, lon);
 }
 
 
@@ -59,15 +53,38 @@ function processData() {
   // if this value is 0, elevation will not be load from Elevation Public API
   let ElevationFilterValue = document.querySelector('.coordinates__elevation').valueAsNumber || 0;
 
+  // Keep track of current loaded coordinates
+  // do not use coordinate label since there is duplicate coordinate
+  // results in number of loaded coordinate may be not equal to total coordinate
+  // need to be loaded
+  let currentLoading = document.querySelector('.loading__current');
+  currentLoading.innerText = ""; // Reset value from previous load
+
+  // Since we can't save response from XHR request, save it temporarily to
+  // a hidden HTML element then load it to variable
+  let tempElevation = document.querySelector('.elevation__temp');
+
   for (let rawCoordinate of listCoordinates) {
     let c = convertDataToCoordinate(rawCoordinate);
     let index = listMarker.length === 0 ? 0 : listMarker[listMarker.length - 1];
     c.label = index + 1;
-    document.querySelector('.loading__current').innerText = c.label;
+    currentLoading.innerText = +currentLoading.innerText + 1;
 
     if (c.isValid()) {
       if (ElevationFilterValue > 0) {
-        c.ele = random(1, 50);
+        let xhr = new XMLHttpRequest();
+        xhr.open('GET', `https://api.open-elevation.com/api/v1/lookup?locations=${c.lat},${c.lon}`, false);
+        xhr.onload = function() {
+          if (this.readyState === 4 && this.status === 200) {
+            tempElevation.innerText = this.responseText;
+          } else {
+            tempElevation.innerText = undefined;
+          }
+        };
+        xhr.send();
+
+        let response = JSON.parse(tempElevation.innerText);
+        c.ele = response.results[0].elevation;
       }
 
       if (c.ele !== undefined && c.ele >= ElevationFilterValue) {
@@ -85,8 +102,8 @@ function processData() {
 
 
   let _markers = [...listMarker];
-  // Nested lopp through all coordinate in list then check distant
-  // between two coordinate if their distant smaller radius
+  // Nested lopp through all coordinate in list, then check distant
+  // between two coordinate if their distant smaller than radius,
   // they will be treated as adjency vertice
   while(_markers.length > 0) {
     let c = _markers.pop();
@@ -100,7 +117,8 @@ function processData() {
 
   markerGroup.clearLayers();
   addMarkerToMap(listMarker);
-  // Draw polyline between each marker to map
+
+  // Draw polyline between each marker of map
   for (let marker of listMarker) {
     if (marker !== undefined) {
       drawPolyline( marker,
@@ -117,9 +135,9 @@ function drawShortestPath(c1, c2) {
   // between coordinate c1 and c2
 
   let _map = {}; // Default input of Graph object
-                // a list of object with key is coordinate label and
-                // value is an object contains adjacent vertice
-                // { "1" : { "2", "3", "4" } }
+                 // a list of object with key is coordinate label and
+                 // value is an object contains adjacent vertice
+                 // { "1" : { "2", "3", "4" } }
   for (let marker of Object.keys(C.list)
                       .map(key => parseInt(key, 10))) {
     _map[marker] = C.list[marker].neighbors;
@@ -187,6 +205,7 @@ function openPopup(label) {
   let marker = C.list[label];
   L.marker([marker.lat, marker.lon]).addTo(markerGroup)
     .bindPopup(`<strong>${marker.name}</strong><br>
+                Elevation: ${marker.ele} m <br>
                 ${marker.lat}, ${marker.lon}`)
     .openPopup();
 }
@@ -219,6 +238,23 @@ function clearInput() {
   document.querySelector('.coordinates__list').value = "";
 }
 
+function convertTime(totalSecond) {
+  // Convert second to hour, minus, second
+  let hour = parseInt(totalSecond / 3600);
+  totalSecond = totalSecond - hour*3600;
+  let minus = parseInt(totalSecond/60);
+  let second = totalSecond - minus*60;
+
+  return [hour, minus, second];
+}
+
+
+function getTotalTime(secondPerCoordinate) {
+  let listCoordinates = document.querySelector('.coordinates__list').value
+                            .split('\n').filter( value => value !== "" );
+  let totalTime = listCoordinates.length * secondPerCoordinate;
+  return convertTime(totalTime);
+}
 
 
 main.addEventListener('click', function(event) {
@@ -237,6 +273,16 @@ main.addEventListener('click', function(event) {
         document.querySelector('.coordinates__elevation__error').innerText = elevation.validationMessage;
         document.querySelector('.coordinates__list__error').innerText = list.validationMessage;
     } else {
+      let ElevationFilterValue = document.querySelector('.coordinates__elevation').valueAsNumber || 0;
+      let [hour, minus, second] = getTotalTime(15);
+      let time = `${hour}h ${minus}m ${second}s`;
+      if (ElevationFilterValue > 0 &&
+          !window.confirm("Elevation will be loaded from Open Elevation API\n"+
+                           "It will take time on the first time.\n" +
+                           "Estimated time: " +  time + "\n" +
+                           "Do you want to continue?")) {
+          return;
+      }
       loading.hidden = false;
       main.hidden = true;
       processData();
