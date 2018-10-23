@@ -60,10 +60,6 @@ function processData() {
   let currentLoading = document.querySelector('.loading__current');
   currentLoading.innerText = ""; // Reset value from previous load
 
-  // Since we can't save response from XHR request, save it temporarily to
-  // a hidden HTML element then load it to variable
-  let tempElevation = document.querySelector('.elevation__temp');
-
   for (let rawCoordinate of listCoordinates) {
     let c = convertDataToCoordinate(rawCoordinate);
     let index = listMarker.length === 0 ? 0 : listMarker[listMarker.length - 1];
@@ -76,15 +72,10 @@ function processData() {
         xhr.open('GET', `https://api.open-elevation.com/api/v1/lookup?locations=${c.lat},${c.lon}`, false);
         xhr.onload = function() {
           if (this.readyState === 4 && this.status === 200) {
-            tempElevation.innerText = this.responseText;
-          } else {
-            tempElevation.innerText = undefined;
+            c.ele = JSON.parse(this.responseText).results[0].elevation;
           }
         };
         xhr.send();
-
-        let response = JSON.parse(tempElevation.innerText);
-        c.ele = response.results[0].elevation;
       }
 
       if (c.ele !== undefined && c.ele >= ElevationFilterValue) {
