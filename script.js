@@ -265,7 +265,7 @@ main.addEventListener('click', function(event) {
         document.querySelector('.coordinates__list__error').innerText = list.validationMessage;
     } else {
       let ElevationFilterValue = document.querySelector('.coordinates__elevation').valueAsNumber || 0;
-      let [hour, minus, second] = getTotalTime(15);
+      let [hour, minus, second] = getTotalTime(25);
       let time = `${hour}h ${minus}m ${second}s`;
       if (ElevationFilterValue > 0 &&
           !window.confirm("Elevation will be loaded from Open Elevation API\n"+
