@@ -31,6 +31,10 @@ main {
   display: inline-block;
   margin-top: 1rem;
 }
+.main label[for=radius],
+.main label[for=elevation] {
+  width: 4rem;
+}
 
 .coordinates__radius,
 .coordinates__elevation {
