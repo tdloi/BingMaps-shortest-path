@@ -1,4 +1,9 @@
+import { Coordinate, Coordinates, HaversineFormula } from './coordinates.js';
+import { Graph } from './graph.js';
+
 "use strict";
+
+let C = new Coordinates();
 
 const main = document.querySelector('.main');
 const selection = document.querySelector('.selection');
@@ -6,6 +11,8 @@ const selectionList = document.querySelector('.selection__list');
 const loading = document.querySelector('.loading');
 
 let shortestPathGroup = new L.featureGroup();
+let markerGroup = new L.featureGroup();
+
 let listSelection = [];
 
 

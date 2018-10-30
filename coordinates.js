@@ -1,3 +1,9 @@
+export {
+  Coordinate,
+  Coordinates,
+  HaversineFormula,
+};
+
 class Coordinates {
   constructor(list = {}) {
     this.list = list;
