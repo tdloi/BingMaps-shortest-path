@@ -1,6 +1,7 @@
 {
   "parserOptions": {
-    "ecmaVersion": 7
+    "ecmaVersion": 7,
+    "sourceType": "module"
   },
 	"env": {
 		"browser": true,
@@ -15,8 +16,6 @@
 	"extends": "eslint:recommended",
   "globals": {
     "L": true,
-    "map": true,
-    "markerGroup": true,
-    "C": true
+    "map": true
   }
 }
