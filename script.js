@@ -1,5 +1,6 @@
 import { Coordinate, Coordinates, HaversineFormula } from './coordinates.js';
 import { Graph } from './graph.js';
+import { Marker } from './marker.js';
 
 "use strict";
 
@@ -114,7 +115,10 @@ function processData() {
   }
 
   markerGroup.clearLayers();
-  addMarkerToMap(listMarker);
+  for (let marker of listMarker) {
+    Marker.addToMap(C.list[marker], markerGroup);
+    Marker.panTo(C.list[marker]);
+  }
 
   // Draw polyline between each marker of map
   for (let marker of listMarker) {
@@ -166,18 +170,8 @@ function drawShortestPath(c1, c2) {
 }
 
 
-function addMarkerToMap(listMarker) {
-  let marker = C.list;
-  for (let c of listMarker) {
-    L.marker([marker[c].lat, marker[c].lon]).addTo(markerGroup)
-      .bindPopup(`<strong>${marker[c].name}</strong><br>
-                  ${marker[c].lat}, ${marker[c].lon}`);
-  }
-  markerGroup.addTo(map);
-  panToMarker(marker[listMarker[0]].lat, marker[listMarker[0]].lon);
-}
 
-function drawPolyline(marker, neighbors, color='blue', group=markerGroup) {
+function drawPolyline(marker, neighbors, color='#0e6dd7', group=markerGroup) {
   // draw polyline between a marker and all of its neightbors
   // neightbors contains list of coordinates label in C
   let latlngs = neighbors.map(
@@ -188,24 +182,6 @@ function drawPolyline(marker, neighbors, color='blue', group=markerGroup) {
   );
 
   L.polyline(latlngs, {color: color}).addTo(group);
-}
-
-
-function panToMarker(lat, lon) {
-  map.panTo(new L.LatLng(lat, lon));
-}
-
-
-function openPopup(label) {
-  // Bind and open popup of a marker in map
-  // Currently there are no way to open a binded popup
-  // so we need to re-bind it then use openPopup method
-  let marker = C.list[label];
-  L.marker([marker.lat, marker.lon]).addTo(markerGroup)
-    .bindPopup(`<strong>${marker.name}</strong><br>
-                Elevation: ${marker.ele} m <br>
-                ${marker.lat}, ${marker.lon}`)
-    .openPopup();
 }
 
 
@@ -309,13 +285,13 @@ selection.addEventListener('click', function select(e) {
   let label = e.target.dataset.src;
   if (!label) return;
 
-  openPopup(label);
-  let lat = C.list[label].lat,
-      lon = C.list[label].lon;
+  Marker.openPopup(C.list[label], markerGroup);
+  let marker = C.list[label];
 
   if (e.target.classList.contains('selection__items--selected')) {
-    panToMarker(lat, lon);
-  } else if (e.target.classList.contains('selection__items')) {
+    Marker.panTo(marker);
+  }
+  else if (e.target.classList.contains('selection__items')) {
     e.target.classList.add('selection__items--selected');
     listSelection.push(label);
 
@@ -331,6 +307,6 @@ selection.addEventListener('click', function select(e) {
       let [c1, c2] = listSelection;
       drawShortestPath(c1, c2);
     }
-    panToMarker(lat, lon);
+    Marker.panTo(marker);
   }
 });
