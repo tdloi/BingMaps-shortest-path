@@ -1,3 +1,10 @@
+/*
+  The MIT License (MIT)
+  Copyright (c) 2014 Andrew Hayward
+
+  View full license at: https://github.com/andrewhayward/dijkstra/blob/master/LICENSE
+*/
+
 export const Graph = (function (undefined) {
 
   var extractKeys = function (obj) {
