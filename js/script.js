@@ -6,10 +6,24 @@ import { Marker } from './marker.js';
 
 let C = new Coordinates();
 
-const main = document.querySelector('.main');
-const selection = document.querySelector('.selection');
-const selectionList = document.querySelector('.selection__list');
-const loading = document.querySelector('.loading');
+const COORDINATE = {
+  elevation: document.querySelector('.coordinates__elevation'),
+  list: document.querySelector('.coordinates__list'),
+
+  main: document.querySelector('.main'),
+  loading:  document.querySelector('.loading'),
+
+  selection: document.querySelector('.selection'),
+  selectionList: document.querySelector('.selection__list'),
+};
+
+const button = {
+  proceed: document.querySelector('.main__button__proceed'),
+  clear: document.querySelector('.main__button__clear'),
+  back: document.querySelector('.main__button__back'),
+  new: document.querySelector('.main__button__new'),
+};
+
 
 let shortestPathGroup = new L.featureGroup();
 let markerGroup = new L.featureGroup();
@@ -48,10 +62,10 @@ function processData() {
   document.querySelectorAll('.selection__items--selected').forEach((target) => {
     target.classList.remove('selection__items--selected');
   });
-  selectionList.innerHTML = "";
+  COORDINATE.selectionList.innerHTML = "";
 
 
-  let listCoordinates = document.querySelector('.coordinates__list').value
+  let listCoordinates = COORDINATE.list.value
                           .replace(/\t/g, ' ')
                           .split('\n').filter( value => value !== "" );
   let listMarker = [];
@@ -59,7 +73,7 @@ function processData() {
   document.querySelector('.loading__total').innerText = listCoordinates.length;
 
   // if this value is 0, elevation will not be load from Elevation Public API
-  let ElevationFilterValue = document.querySelector('.coordinates__elevation').valueAsNumber || 0;
+  let ElevationFilterValue = COORDINATE.elevation.valueAsNumber || 0;
 
   // Keep track of current loaded coordinates
   // do not use coordinate label since there is duplicate coordinate
@@ -91,7 +105,7 @@ function processData() {
         if (listMarker.includes(c.label) === false) {
           listMarker.push(c.label);
         }
-        selectionList.innerHTML += `
+        COORDINATE.selectionList.innerHTML += `
           <p class="selection__items" data-src="${c.label}">${c.name}</p>
         `;
         C.addCoordinate(c);
@@ -192,15 +206,15 @@ function drawPolyline(marker, neighbors, color='#0e6dd7', group=markerGroup) {
     const reader = new FileReader();
 
     reader.onload = function(fi) {
-      let listCoordinates = document.querySelector('.coordinates__list');
       // Each column from csv file is seperated by comma
       // We need to replace it with space so that we can filter it later
-      listCoordinates.value = fi.target.result.replace(/,/g, ' ');
+      COORDINATE.list.value = fi.target.result.replace(/,/g, ' ');
     };
 
     reader.readAsText(selectedFile);
   };
 })();
+
 
 function clearInput() {
   document.querySelectorAll('input').forEach(
@@ -209,89 +223,85 @@ function clearInput() {
   document.querySelectorAll('.error').forEach(
     node => node.innerText = ""
   );
-  document.querySelector('.coordinates__list').value = "";
-}
-
-function convertTime(totalSecond) {
-  // Convert second to hour, minus, second
-  let hour = parseInt(totalSecond / 3600);
-  totalSecond = totalSecond - hour*3600;
-  let minus = parseInt(totalSecond/60);
-  let second = totalSecond - minus*60;
-
-  return [hour, minus, second];
+  COORDINATE.list.value = "";
 }
 
 
 function getTotalTime(secondPerCoordinate) {
-  let listCoordinates = document.querySelector('.coordinates__list').value
-                            .split('\n').filter( value => value !== "" );
-  let totalTime = listCoordinates.length * secondPerCoordinate;
-  return convertTime(totalTime);
+  let list = COORDINATE.list.value
+                .split('\n').filter( value => value !== "" );
+  return convertTime(list.length * secondPerCoordinate);
+
+
+  function convertTime(totalSecond) {
+    // Convert second to hour, minus, second
+    let hour = parseInt(totalSecond / 3600);
+    totalSecond = totalSecond - hour*3600;
+    let minus = parseInt(totalSecond/60);
+    let second = totalSecond - minus*60;
+
+    return [hour, minus, second];
+  }
 }
 
 
-main.addEventListener('click', function(event) {
-  let target = event.target;
-  if (target.classList.contains('main__button__clear')) {
-    clearInput();
-  } else if (target.classList.contains('main__button__proceed')) {
-    // Validate input using HTML5 Constraint validation API
-    const radius = document.querySelector('.coordinates__radius');
-    const elevation = document.querySelector('.coordinates__elevation');
-    const list = document.querySelector('.coordinates__list');
-    if (radius.validity.valid === false ||
-        list.validity.valid === false ||
-        elevation.validity === false) {
-        document.querySelector('.coordinates__radius__error').innerText = radius.validationMessage;
-        document.querySelector('.coordinates__elevation__error').innerText = elevation.validationMessage;
-        document.querySelector('.coordinates__list__error').innerText = list.validationMessage;
-    } else {
-      let ElevationFilterValue = document.querySelector('.coordinates__elevation').valueAsNumber || 0;
-      let [hour, minus, second] = getTotalTime(25);
-      let time = `${hour}h ${minus}m ${second}s`;
-      if (ElevationFilterValue > 0 &&
-          !window.confirm("Elevation will be loaded from Open Elevation API\n"+
-                           "It will take time on the first time.\n" +
-                           "Estimated time: " +  time + "\n" +
-                           "Do you want to continue?")) {
-          return;
-      }
-      loading.hidden = false;
-      main.hidden = true;
-      processData();
-      loading.hidden = true;
-      selection.hidden = false;
+button.clear.addEventListener('click', clearInput);
+
+button.proceed.addEventListener('click', function(){
+  // Validate input using HTML5 Constraint validation API
+  const radius = document.querySelector('.coordinates__radius');
+  const elevation = document.querySelector('.coordinates__elevation');
+  const list = COORDINATE.list;
+  if (radius.validity.valid === false ||
+      list.validity.valid === false ||
+      elevation.validity === false) {
+      document.querySelector('.coordinates__radius__error').innerText = radius.validationMessage;
+      document.querySelector('.coordinates__elevation__error').innerText = elevation.validationMessage;
+      document.querySelector('.coordinates__list__error').innerText = list.validationMessage;
+  } else {
+    let ElevationFilterValue = document.querySelector('.coordinates__elevation').valueAsNumber || 0;
+    let [hour, minus, second] = getTotalTime(25);
+    let time = `${hour}h ${minus}m ${second}s`;
+    if (ElevationFilterValue > 0 &&
+        !window.confirm("Elevation will be loaded from Open Elevation API\n"+
+                        "It will take time on the first time.\n" +
+                        "Estimated time: " +  time + "\n" +
+                        "Do you want to continue?")) {
+        return;
     }
+    COORDINATE.loading.hidden = false;
+    COORDINATE.main.hidden = true;
+    processData();
+    COORDINATE.loading.hidden = true;
+    COORDINATE.selection.hidden = false;
   }
 });
 
-selection.addEventListener('click', function button(event) {
-  let target = event.target;
-  if (target.classList.contains('main__button__back')) {
-    selection.hidden = true;
-    main.hidden = false;
-    shortestPathGroup.clearLayers();
-  } else if (target.classList.contains('main__button__new')) {
-    selection.hidden = true;
-    main.hidden = false;
-    clearInput();
-    markerGroup.clearLayers();
-    shortestPathGroup.clearLayers();
-  }
+button.back.addEventListener('click', function(){
+  COORDINATE.selection.hidden = true;
+  COORDINATE.main.hidden = false;
+  shortestPathGroup.clearLayers();
 });
 
-selection.addEventListener('click', function select(e) {
+button.new.addEventListener('click', function(){
+  COORDINATE.selection.hidden = true;
+  COORDINATE.main.hidden = false;
+  clearInput();
+  markerGroup.clearLayers();
+  shortestPathGroup.clearLayers();
+});
+
+
+COORDINATE.selection.addEventListener('click', function selectItem(e) {
   let label = e.target.dataset.src;
-  if (!label) return;
+  // Click on selection item gap or selected item
+  if (!label || e.target.classList.contains('selection__items--selected')) return;
 
-  Marker.openPopup(C.list[label], markerGroup);
   let marker = C.list[label];
+  Marker.openPopup(marker, markerGroup);
+  Marker.panTo(marker);
 
-  if (e.target.classList.contains('selection__items--selected')) {
-    Marker.panTo(marker);
-  }
-  else if (e.target.classList.contains('selection__items')) {
+  if (e.target.classList.contains('selection__items')) {
     e.target.classList.add('selection__items--selected');
     listSelection.push(label);
 
@@ -303,10 +313,11 @@ selection.addEventListener('click', function select(e) {
         }
       });
     }
+
     if (listSelection.length === 2) {
       let [c1, c2] = listSelection;
       drawShortestPath(c1, c2);
     }
-    Marker.panTo(marker);
+
   }
 });
