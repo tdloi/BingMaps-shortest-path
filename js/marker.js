@@ -4,11 +4,22 @@ export const Marker = {
    * @param {Coordinate} marker An instance of Coordinate class
    * @param {FeatureGroup} group featureGroup which marker belongs to
    */
-  addToMap: function(marker, group) {
+  addToMap: function(marker, group, iconPath='') {
     L.marker([marker.lat, marker.lon]).addTo(group)
       .bindPopup(`<strong>${marker.name}</strong><br>
                   Elevation: ${marker.ele} m <br>
                   ${marker.lat}, ${marker.lon}`);
+    if (iconPath !== '') {
+      if (iconPath === 'red') iconPath = "img/marker-red.png";
+      // Change iconUrl will result in relative path of Leaflet unpkg path
+      // Leaflet icon is joined imagePath and iconUrl, this is
+      // workaround by removed iconUrl (default to marker-icon.png) then
+      // set icon imagePath directly
+      L.Icon.Default.prototype.options.iconUrl = "";
+      L.Icon.Default.imagePath = iconPath;
+    }
+
+
     group.addTo(map);
   },
 
