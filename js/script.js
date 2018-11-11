@@ -13,7 +13,6 @@ const COORDINATE = {
   list: document.querySelector('.coordinates__list'),
 
   main: document.querySelector('.main'),
-  loading:  document.querySelector('.loading'),
 
   selection: document.querySelector('.selection'),
   selectionList: document.querySelector('.selection__list'),
@@ -61,7 +60,7 @@ function convertRawStringToCoordinate(raw) {
 
 
 function processData() {
-  COORDINATE.loading.hidden = false;
+  COORDINATE.selection.hidden = false;
   COORDINATE.main.hidden = true;
 
   const radius = function() {
@@ -85,24 +84,14 @@ function processData() {
 
   const elevationMissingValue = getElevationMissingValue();
 
-  document.querySelector('.loading__total').innerText = listCoordinates.length;
-
-
   const ElevationFilterValue = COORDINATE.elevation.valueAsNumber || -Infinity;
 
-  // Keep track of current loaded coordinates
-  // do not use coordinate label since there is duplicate coordinate
-  // results in number of loaded coordinate may be not equal to total coordinate
-  // need to be loaded
-  let currentLoading = document.querySelector('.loading__current');
-  currentLoading.innerText = ""; // Reset value from previous load
 
   for (let rawString of listCoordinates) {
     let c = new Coordinate( ...convertRawStringToCoordinate(rawString) );
 
     let index = listMarker.length === 0 ? 0 : listMarker[listMarker.length - 1];
     c.label = index + 1;
-    currentLoading.innerText = +currentLoading.innerText + 1;
 
     if (c.isValid()) {
       if (c.ele === -Infinity) {
@@ -177,8 +166,6 @@ function processData() {
 
   shortestPathGroup.addTo(map);
 
-  COORDINATE.loading.hidden = true;
-  COORDINATE.selection.hidden = false;
 }
 
 
@@ -262,23 +249,6 @@ function clearInput() {
   COORDINATE.list.value = "";
 }
 
-
-function getTotalTime(secondPerCoordinate) {
-  let list = COORDINATE.list.value
-                .split('\n').filter( value => value !== "" );
-  return convertTime(list.length * secondPerCoordinate);
-
-
-  function convertTime(totalSecond) {
-    // Convert second to hour, minus, second
-    let hour = parseInt(totalSecond / 3600);
-    totalSecond = totalSecond - hour*3600;
-    let minus = parseInt(totalSecond/60);
-    let second = totalSecond - minus*60;
-
-    return [hour, minus, second];
-  }
-}
 
 function getElevationArray() {
   // Get a filtered elevation value array

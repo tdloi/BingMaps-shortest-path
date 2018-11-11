@@ -130,11 +130,6 @@ input:invalid:focus {
 .selection__error {
   margin-left: 1rem;
 }
-.loading {
-  text-align: center;
-  position: relative;
-  top: 45vh;
-}
 
 .elevation-action {
   padding: 2rem 1rem;
