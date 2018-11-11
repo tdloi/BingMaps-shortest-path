@@ -36,14 +36,20 @@ function random(min, max) {
 }
 
 
-function convertDataToCoordinate(raw) {
+function convertRawStringToCoordinate(raw) {
   // Each string includes: Coordinate name, Elevation, Latitude, Lontitude
   // seperated by a space, so to avoid space in name, we need get
-  // lat and lon first then get elevation, if elevation is not available
-  // it will be load from api later
+  // lat and lon first then get elevation
   raw = raw.split(' ');
   let [lat, lon] = raw.splice(-2, 2);
-  return new Coordinate(undefined, raw.join(' '), 0, lat, lon);
+  // Check if elevation is missing, then check if its value is a number
+  // if not, assume it is a part of coordinate name
+  let ele = -Infinity;
+  if (raw.length > 2 &&
+      typeof +raw[raw.length + 1] === 'number') {
+    ele = raw.pop();
+  }
+  return [raw.join(' '), ele, lat, lon];
 }
 
 
@@ -56,13 +62,10 @@ function processData() {
     return +r.value;
   }();
 
-  C.list = {}; // Clear list coordinate
-  // Clear list of selection and all of highlighted items
-  listSelection = [];
-  document.querySelectorAll('.selection__items--selected').forEach((target) => {
-    target.classList.remove('selection__items--selected');
-  });
+  // clear data before process
+  C.list = {};
   COORDINATE.selectionList.innerHTML = "";
+  markerGroup.clearLayers();
 
 
   let listCoordinates = COORDINATE.list.value
@@ -72,8 +75,8 @@ function processData() {
 
   document.querySelector('.loading__total').innerText = listCoordinates.length;
 
-  // if this value is 0, elevation will not be load from Elevation Public API
-  let ElevationFilterValue = COORDINATE.elevation.valueAsNumber || 0;
+
+  let ElevationFilterValue = COORDINATE.elevation.valueAsNumber || -Infinity;
 
   // Keep track of current loaded coordinates
   // do not use coordinate label since there is duplicate coordinate
@@ -82,8 +85,9 @@ function processData() {
   let currentLoading = document.querySelector('.loading__current');
   currentLoading.innerText = ""; // Reset value from previous load
 
-  for (let rawCoordinate of listCoordinates) {
-    let c = convertDataToCoordinate(rawCoordinate);
+  for (let rawString of listCoordinates) {
+    let c = new Coordinate( ...convertRawStringToCoordinate(rawString) );
+
     let index = listMarker.length === 0 ? 0 : listMarker[listMarker.length - 1];
     c.label = index + 1;
     currentLoading.innerText = +currentLoading.innerText + 1;
@@ -128,7 +132,6 @@ function processData() {
     }
   }
 
-  markerGroup.clearLayers();
   for (let marker of listMarker) {
     Marker.addToMap(C.list[marker], markerGroup);
     Marker.panTo(C.list[marker]);
@@ -281,6 +284,7 @@ button.back.addEventListener('click', function(){
   COORDINATE.selection.hidden = true;
   COORDINATE.main.hidden = false;
   shortestPathGroup.clearLayers();
+  listSelection = [];
 });
 
 button.new.addEventListener('click', function(){
