@@ -61,6 +61,9 @@ function convertRawStringToCoordinate(raw) {
 
 
 function processData() {
+  COORDINATE.loading.hidden = false;
+  COORDINATE.main.hidden = true;
+
   const radius = function() {
     let r = document.querySelector('.coordinates__radius');
     if (r.value === "") {
@@ -80,10 +83,12 @@ function processData() {
                           .split('\n').filter( value => value !== "" );
   let listMarker = [];
 
+  const elevationMissingValue = getElevationMissingValue();
+
   document.querySelector('.loading__total').innerText = listCoordinates.length;
 
 
-  let ElevationFilterValue = COORDINATE.elevation.valueAsNumber || -Infinity;
+  const ElevationFilterValue = COORDINATE.elevation.valueAsNumber || -Infinity;
 
   // Keep track of current loaded coordinates
   // do not use coordinate label since there is duplicate coordinate
@@ -100,27 +105,31 @@ function processData() {
     currentLoading.innerText = +currentLoading.innerText + 1;
 
     if (c.isValid()) {
-      if (ElevationFilterValue > 0) {
-        let xhr = new XMLHttpRequest();
-        xhr.open('GET', `https://api.open-elevation.com/api/v1/lookup?locations=${c.lat},${c.lon}`, false);
-        xhr.onload = function() {
-          if (this.readyState === 4 && this.status === 200) {
-            c.ele = JSON.parse(this.responseText).results[0].elevation;
-          }
-        };
-        xhr.send();
+      if (c.ele === -Infinity) {
+
+        if (elevationMissingValue === undefined) {
+          let xhr = new XMLHttpRequest();
+          xhr.open('GET', `https://api.open-elevation.com/api/v1/lookup?locations=${c.lat},${c.lon}`, false);
+          xhr.onload = function() {
+            if (this.readyState === 4 && this.status === 200) {
+              c.ele = JSON.parse(this.responseText).results[0].elevation;
+            }
+          };
+          xhr.send();
+        }
+        else {
+          c.ele = elevationMissingValue;
+        }
       }
 
-      if (c.ele !== undefined && c.ele >= ElevationFilterValue) {
-        if (C.isExisted(c)) c.label = +C.findCoordinate(c);
-        if (listMarker.includes(c.label) === false) {
-          listMarker.push(c.label);
-        }
-        COORDINATE.selectionList.innerHTML += `
-          <p class="selection__items" data-src="${c.label}">${c.name}</p>
-        `;
-        C.addCoordinate(c);
+      if (C.isExisted(c)) c.label = +C.findCoordinate(c);
+      if (listMarker.includes(c.label) === false) {
+        listMarker.push(c.label);
       }
+      COORDINATE.selectionList.innerHTML += `
+        <p class="selection__items" data-src="${c.label}">${c.name}</p>
+      `;
+      C.addCoordinate(c);
     }
   }
 
@@ -167,6 +176,9 @@ function processData() {
   }
 
   shortestPathGroup.addTo(map);
+
+  COORDINATE.loading.hidden = true;
+  COORDINATE.selection.hidden = false;
 }
 
 
@@ -268,11 +280,36 @@ function getTotalTime(secondPerCoordinate) {
   }
 }
 
+function getElevationArray() {
+  // Get a filtered elevation value array
+  let ElevationArray = COORDINATE.list.value.split('\n')
+            .filter(value => value !== "")
+            .reduce( function (acc, curr) {
+                let ele = convertRawStringToCoordinate(curr)[1];
+                return acc.concat(ele);
+              }, [] )
+            .filter(value => value !== -Infinity);
+  return ElevationArray;
+}
+
+function getElevationMissingValue() {
+  let elevationArray = getElevationArray();
+  if (COORDINATE.elevationNullAction.value === 'min') {
+    return Math.min(...elevationArray);
+  }
+  if (COORDINATE.elevationNullAction.value === 'max') {
+    return Math.max(...elevationArray);
+  }
+
+  return undefined;
+}
+
 button.eleSelection.addEventListener('click', function(e){
   if (!e.target.classList.contains('items')) return;
 
   COORDINATE.elevationNullAction.value = e.target.dataset.action;
   closeElevationActionMenu(e.target);
+  processData();
 });
 
 button.cancel.addEventListener('click', function() {
@@ -297,22 +334,23 @@ button.proceed.addEventListener('click', function(){
       document.querySelector('.coordinates__radius__error').innerText = radius.validationMessage;
       document.querySelector('.coordinates__elevation__error').innerText = elevation.validationMessage;
       document.querySelector('.coordinates__list__error').innerText = list.validationMessage;
-  } else {
-    let ElevationFilterValue = document.querySelector('.coordinates__elevation').valueAsNumber || 0;
-    let [hour, minus, second] = getTotalTime(25);
-    let time = `${hour}h ${minus}m ${second}s`;
-    if (ElevationFilterValue > 0 &&
-        !window.confirm("Elevation will be loaded from Open Elevation API\n"+
-                        "It will take time on the first time.\n" +
-                        "Estimated time: " +  time + "\n" +
-                        "Do you want to continue?")) {
-        return;
+  }
+  else {
+    if (COORDINATE.elevationNullAction.value !== "") {
+      processData();
+      return;
     }
-    COORDINATE.loading.hidden = false;
-    COORDINATE.main.hidden = true;
+    // check if elevation value is missing in any of coordinate data
+    let cdnList = COORDINATE.list.value.split('\n')
+                    .filter(value => value !== "");
+    let ElevationArray = getElevationArray();
+
+    if (ElevationArray.length !== cdnList.length) {
+      COORDINATE.main.hidden = true;
+      button.eleSelection.hidden = false;
+      return;
+    }
     processData();
-    COORDINATE.loading.hidden = true;
-    COORDINATE.selection.hidden = false;
   }
 });
 
@@ -321,6 +359,7 @@ button.back.addEventListener('click', function(){
   COORDINATE.main.hidden = false;
   shortestPathGroup.clearLayers();
   listSelection = [];
+  COORDINATE.elevationNullAction.value = "";
 });
 
 button.new.addEventListener('click', function(){
