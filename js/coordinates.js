@@ -56,8 +56,8 @@ class Coordinates {
 }
 
 class Coordinate {
-  constructor(label, name, ele, lat, lon) {
-    this.label = label;
+  constructor(name, ele, lat, lon) {
+    this.label = undefined;
     this.name = name;
     this.ele = ele;
     this.lat = lat;
