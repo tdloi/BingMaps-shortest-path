@@ -38,6 +38,7 @@
           <label for="elevation">Elevation</label>
           <input type="number" name="elevation" class="coordinates__elevation" min="1" max="2000"> m
           <p class="error coordinates__elevation__error"></p>
+          <input type="hidden" value="" class="coordinates__elevation__action">
         </div>
         <div>
           <label for="csv-file">Load from csv file:</label>
@@ -45,9 +46,6 @@
         </div>
         <div>
           <label for="coordinates-list">List of coordinates:</label>
-          <!-- <div title="If this box is checked, elevation will not be fetched from public API&#10;If a loaded elevation is not valid, coordinate will be skipped">
-              <input type="checkbox" class="coordinates__load-elevation"> Included elevation in input data
-          </div> -->
           <p class="error coordinates__list__error"></p>
           <textarea type="text"
                     class="coordinates__list"
@@ -62,6 +60,20 @@
         </div>
       </div>
 
+      <div class="elevation-action" hidden>
+        <button class="main__button main__button--red main__button__cancel"> Cancel </button>
+
+        <div>Some coordinates are missing elevation value, please choose your action:</div>
+
+        <span>Use minimum value of all valid elevation value</span>
+        <button data-action="min" class="main__button items">Use MIN value</button>
+        <span>Use maximum value of all valid elevation value</span>
+        <button data-action="max" class="main__button items">Use MAX value</button>
+        <span>Load value from
+          <a target="_blank" href="https://open-elevation.com/">Open Elevation API</a>
+        </span>
+        <button data-action="api" class="main__button items">Load from API</button>
+      </div>
       <div class="selection" hidden>
         <div class="function-area">
           <button class="main__button main__button--green main__button__back">Back</button>

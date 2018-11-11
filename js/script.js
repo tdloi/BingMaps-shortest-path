@@ -8,6 +8,8 @@ let C = new Coordinates();
 
 const COORDINATE = {
   elevation: document.querySelector('.coordinates__elevation'),
+  elevationNullAction: document.querySelector('.coordinates__elevation__action'),
+
   list: document.querySelector('.coordinates__list'),
 
   main: document.querySelector('.main'),
@@ -22,6 +24,8 @@ const button = {
   clear: document.querySelector('.main__button__clear'),
   back: document.querySelector('.main__button__back'),
   new: document.querySelector('.main__button__new'),
+  cancel: document.querySelector('.main__button__cancel'),
+  eleSelection: document.querySelector('.elevation-action'),
 };
 
 
@@ -247,6 +251,21 @@ function getTotalTime(secondPerCoordinate) {
   }
 }
 
+button.eleSelection.addEventListener('click', function(e){
+  if (!e.target.classList.contains('items')) return;
+
+  COORDINATE.elevationNullAction.value = e.target.dataset.action;
+  closeElevationActionMenu(e.target);
+});
+
+button.cancel.addEventListener('click', function() {
+  closeElevationActionMenu(this);
+});
+
+function closeElevationActionMenu(self) {
+  self.parentNode.hidden = true;
+  self.parentNode.previousElementSibling.hidden = false;
+}
 
 button.clear.addEventListener('click', clearInput);
 
