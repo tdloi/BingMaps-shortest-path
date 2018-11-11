@@ -30,6 +30,8 @@ const button = {
 
 
 let shortestPathGroup = new L.featureGroup();
+shortestPathGroup.addTo(map);
+
 let markerGroup = new L.featureGroup();
 
 let listSelection = [];
@@ -80,50 +82,74 @@ function processData() {
   let listCoordinates = COORDINATE.list.value
                           .replace(/\t/g, ' ')
                           .split('\n').filter( value => value !== "" );
-  let listMarker = [];
+  let listValidMarker = [];
+  let listInvalidMarker = [];
 
   const elevationMissingValue = getElevationMissingValue();
 
-  const ElevationFilterValue = COORDINATE.elevation.valueAsNumber || -Infinity;
+  const ElevationFilterValue = COORDINATE.elevation.valueAsNumber || 0;
 
 
   for (let rawString of listCoordinates) {
     let c = new Coordinate( ...convertRawStringToCoordinate(rawString) );
+    // Make a list marker conbine of valid and invalid marker
+    // to keep track of label
+    let listMarker = listValidMarker.concat(listInvalidMarker)
+                        .map(value => +value);
 
-    let index = listMarker.length === 0 ? 0 : listMarker[listMarker.length - 1];
+    let index = listMarker.length === 0 ? 0 : Math.max( ...listMarker );
     c.label = index + 1;
 
     if (c.isValid()) {
-      if (c.ele === -Infinity) {
 
-        if (elevationMissingValue === undefined) {
+      if (c.ele === -Infinity &&
+          elevationMissingValue === undefined) {
           let xhr = new XMLHttpRequest();
           xhr.open('GET', `https://api.open-elevation.com/api/v1/lookup?locations=${c.lat},${c.lon}`, false);
           xhr.onload = function() {
             if (this.readyState === 4 && this.status === 200) {
               c.ele = JSON.parse(this.responseText).results[0].elevation;
+
+              if (C.isExisted(c)) c.label = +C.findCoordinate(c);
+              if (c.ele >= ElevationFilterValue) {
+                if (listValidMarker.includes(c.label) === false) {
+                  listValidMarker.push(c.label);
+                }
+                addCoordinate(c);
+              } else {
+                if (listInvalidMarker.includes(c.label) === false) {
+                  listInvalidMarker.push(c.label);
+                }
+                addCoordinate(c);
+              }
+
             }
           };
           xhr.send();
+      }
+      else {
+        if (c.ele === -Infinity) c.ele = elevationMissingValue;
+        if (C.isExisted(c)) c.label = +C.findCoordinate(c);
+
+        if (c.ele >= ElevationFilterValue) {
+          if (listValidMarker.includes(c.label) === false) {
+            listValidMarker.push(c.label);
+          }
+          addCoordinate(c);
+        } else {
+          if (listInvalidMarker.includes(c.label) === false) {
+            listInvalidMarker.push(c.label);
+          }
+          addCoordinate(c);
         }
-        else {
-          c.ele = elevationMissingValue;
-        }
+
       }
 
-      if (C.isExisted(c)) c.label = +C.findCoordinate(c);
-      if (listMarker.includes(c.label) === false) {
-        listMarker.push(c.label);
-      }
-      COORDINATE.selectionList.innerHTML += `
-        <p class="selection__items" data-src="${c.label}">${c.name}</p>
-      `;
-      C.addCoordinate(c);
     }
   }
 
 
-  let _markers = [...listMarker];
+  let _markers = [...listValidMarker];
   // Nested lopp through all coordinate in list, then check distant
   // between two coordinate if their distant smaller than radius,
   // they will be treated as adjency vertice
@@ -135,11 +161,6 @@ function processData() {
       if ( HaversineFormula(c1, c2) <= radius )
         C.addNeighbor(c1, c2);
     }
-  }
-
-  for (let marker of listMarker) {
-    Marker.addToMap(C.list[marker], markerGroup);
-    Marker.panTo(C.list[marker]);
   }
 
   // update list input so that we can export it later
@@ -157,15 +178,34 @@ function processData() {
   }
 
   // Draw polyline between each marker of map
-  for (let marker of listMarker) {
+  for (let marker of listValidMarker) {
     if (marker !== undefined) {
       drawPolyline( marker,
                     Object.keys(C.list[marker].neighbors) );
     }
   }
 
-  shortestPathGroup.addTo(map);
+  function addCoordinate(c, valid=true) {
+    COORDINATE.selectionList.innerHTML += `
+      <p class="selection__items" data-src="${c.label}">${c.name}</p>
+    `;
+    C.addCoordinate(c);
 
+    if (valid === true) {
+      Marker.addToMap(c, markerGroup);
+    } else {
+      Marker.addToMap(c, markerGroup, 'red');
+    }
+
+    Marker.panTo(c);
+  }
+
+  function drawPolylines(marker, listNeighbor, _listInvalidMarker) {
+    listNeighbor = listNeighbor.filter(
+      neighbor => !_listInvalidMarker.includes(neighbor)
+    );
+    drawPolyline(marker, listNeighbor);
+  }
 }
 
 
