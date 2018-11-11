@@ -45,13 +45,15 @@ function convertRawStringToCoordinate(raw) {
   // Each string includes: Coordinate name, Elevation, Latitude, Lontitude
   // seperated by a space, so to avoid space in name, we need get
   // lat and lon first then get elevation
-  raw = raw.split(' ');
+  raw = raw.split(' ').filter(
+    value => value !== ""
+  );
   let [lat, lon] = raw.splice(-2, 2);
   // Check if elevation is missing, then check if its value is a number
   // if not, assume it is a part of coordinate name
   let ele = -Infinity;
-  if (raw.length > 2 &&
-      typeof +raw[raw.length + 1] === 'number') {
+  if (raw.length >= 2 &&
+      typeof +raw[raw.length - 1] === 'number') {
     ele = raw.pop();
   }
   return [raw.join(' '), ele, lat, lon];
