@@ -1,5 +1,6 @@
 {
-  "dependencies": {
-    "eslint": "^5.8.0"
+  "dependencies": {},
+  "devDependencies": {
+    "eslint": "^5.9.0"
   }
 }
