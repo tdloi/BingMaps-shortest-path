@@ -152,3 +152,9 @@ input:invalid:focus {
   width: 90%;
   height: 3rem;
 }
+
+.export-csv {
+  display: inline-block;
+  text-decoration: underline;
+  cursor: pointer;
+}

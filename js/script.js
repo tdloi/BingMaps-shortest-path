@@ -26,6 +26,7 @@ const button = {
   new: document.querySelector('.main__button__new'),
   cancel: document.querySelector('.main__button__cancel'),
   eleSelection: document.querySelector('.elevation-action'),
+  export: document.querySelector('.export-csv'),
 };
 
 
@@ -139,6 +140,20 @@ function processData() {
   for (let marker of listMarker) {
     Marker.addToMap(C.list[marker], markerGroup);
     Marker.panTo(C.list[marker]);
+  }
+
+  // update list input so that we can export it later
+  if (Object.keys(C.list).length > 0) {
+    let _outputString = "\n";
+    for ( let m of Object.keys(C.list) ) {
+      m = C.list[m];
+      let ele = m.ele === -Infinity ? "" : m.ele;
+      m = [m.name, ele, m.lat, m.lon];
+
+      _outputString += m.join(' ');
+      _outputString += '\n';
+    }
+    COORDINATE.list.value = _outputString;
   }
 
   // Draw polyline between each marker of map
@@ -343,4 +358,18 @@ COORDINATE.selection.addEventListener('click', function selectItem(e) {
     }
 
   }
+});
+
+
+button.export.addEventListener('click', function() {
+  let list = COORDINATE.list.value.split('\n').filter(value => value !== "");
+  let data = "data:text/csv;charset=utf-8,";
+  for (let value of list) {
+    value = convertRawStringToCoordinate(value);
+    if (value[1] === -Infinity) value[1] = "";
+
+    data += value.join(',');
+    data += '\r\n';
+  }
+  this.href = encodeURI(data);
 });
