@@ -4,28 +4,31 @@ import { Marker } from './marker.js';
 
 "use strict";
 
+const $ = document.querySelector.bind(document);
+
 let C = new Coordinates();
 
 const COORDINATE = {
-  elevation: document.querySelector('.coordinates__elevation'),
-  elevationNullAction: document.querySelector('.coordinates__elevation__action'),
+  elevation: $('.coordinates__elevation'),
+  elevationNullAction: $('.coordinates__elevation__action'),
 
-  list: document.querySelector('.coordinates__list'),
+  list: $('.coordinates__list'),
 
-  main: document.querySelector('.main'),
+  main: $('.main'),
 
-  selection: document.querySelector('.selection'),
-  selectionList: document.querySelector('.selection__list'),
+  selection: $('.selection'),
+  selectionList: $('.selection__list'),
 };
 
+
 const button = {
-  proceed: document.querySelector('.main__button__proceed'),
-  clear: document.querySelector('.main__button__clear'),
-  back: document.querySelector('.main__button__back'),
-  new: document.querySelector('.main__button__new'),
-  cancel: document.querySelector('.main__button__cancel'),
-  eleSelection: document.querySelector('.elevation-action'),
-  export: document.querySelector('.export-csv'),
+  proceed: $('.main__button__proceed'),
+  clear: $('.main__button__clear'),
+  back: $('.main__button__back'),
+  new: $('.main__button__new'),
+  cancel: $('.main__button__cancel'),
+  eleSelection: $('.elevation-action'),
+  export: $('.export-csv'),
 };
 
 
@@ -66,7 +69,7 @@ function processData() {
   COORDINATE.main.hidden = true;
 
   const radius = function() {
-    let r = document.querySelector('.coordinates__radius');
+    let r = $('.coordinates__radius');
     if (r.value === "") {
       r.value = random(10, 100);
     }
@@ -227,12 +230,12 @@ function drawShortestPath(c1, c2) {
   shortestPathGroup.clearLayers();
 
   if (path === null) {
-    document.querySelector('.selection__error').innerHTML = `
+    $('.selection__error').innerHTML = `
       No shortest path found
     `;
     return;
   } else {
-    document.querySelector('.selection__error').innerHTML = "";
+    $('.selection__error').innerHTML = "";
   }
   for (let marker of path) {
     let index = path.indexOf(marker);
@@ -335,15 +338,15 @@ button.clear.addEventListener('click', clearInput);
 
 button.proceed.addEventListener('click', function(){
   // Validate input using HTML5 Constraint validation API
-  const radius = document.querySelector('.coordinates__radius');
-  const elevation = document.querySelector('.coordinates__elevation');
+  const radius = $('.coordinates__radius');
+  const elevation = $('.coordinates__elevation');
   const list = COORDINATE.list;
   if (radius.validity.valid === false ||
       list.validity.valid === false ||
       elevation.validity === false) {
-      document.querySelector('.coordinates__radius__error').innerText = radius.validationMessage;
-      document.querySelector('.coordinates__elevation__error').innerText = elevation.validationMessage;
-      document.querySelector('.coordinates__list__error').innerText = list.validationMessage;
+      $('.coordinates__radius__error').innerText = radius.validationMessage;
+      $('.coordinates__elevation__error').innerText = elevation.validationMessage;
+      $('.coordinates__list__error').innerText = list.validationMessage;
   }
   else {
     if (COORDINATE.elevationNullAction.value !== "") {
