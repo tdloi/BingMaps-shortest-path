@@ -28,7 +28,6 @@ const button = {
   new: $('.main__button__new'),
   cancel: $('.main__button__cancel'),
   eleSelection: $('.elevation-action'),
-  export: $('.export-csv'),
 };
 
 
@@ -265,23 +264,6 @@ function drawPolyline(marker, neighbors, color='#0e6dd7', group=markerGroup) {
 }
 
 
-(function readFileInput(){
-  let file = document.getElementById('csv-file');
-  file.onchange = function() {
-    const selectedFile = file.files[0];
-    const reader = new FileReader();
-
-    reader.onload = function(fi) {
-      // Each column from csv file is seperated by comma
-      // We need to replace it with space so that we can filter it later
-      COORDINATE.list.value = fi.target.result.replace(/,/g, ' ');
-    };
-
-    reader.readAsText(selectedFile);
-  };
-})();
-
-
 function clearInput() {
   document.querySelectorAll('input').forEach(
     node => node.value = ""
@@ -415,8 +397,9 @@ COORDINATE.selection.addEventListener('click', function selectItem(e) {
 });
 
 
-button.export.addEventListener('click', function() {
-  let list = COORDINATE.list.value.split('\n').filter(value => value !== "");
+$('.export-csv').addEventListener('click', function exportCSV() {
+  let list = $('.coordinates__list').value.split('\n')
+                .filter(value => value !== "");
   let data = "data:text/csv;charset=utf-8,";
   for (let value of list) {
     value = convertRawStringToCoordinate(value);
@@ -426,4 +409,17 @@ button.export.addEventListener('click', function() {
     data += '\r\n';
   }
   this.href = encodeURI(data);
+});
+
+$('#csv-file').addEventListener('change', function readContentIntoInputList() {
+  const selectedFile = this.files[0];
+  const reader = new FileReader();
+
+  reader.onload = function(fi) {
+    // Each column from csv file is seperated by comma
+    // We need to replace it with space so that we can filter it later
+    $('.coordinates__list').value = fi.target.result.replace(/,/g, ' ');
+  };
+
+  reader.readAsText(selectedFile);
 });
