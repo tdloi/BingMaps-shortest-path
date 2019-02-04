@@ -17,6 +17,7 @@
     <div id="map"></div>
     <main>
       <div class="main">
+        <form>
         <div>
           <label for="radius">Radius</label>
           <input type="number" name="radius" class="coordinates__radius" step="0.01" min="1" max="100"> km
@@ -26,7 +27,6 @@
           <label for="elevation">Elevation</label>
           <input type="number" name="elevation" class="coordinates__elevation" min="1" max="2000"> m
           <p class="error"></p>
-          <input type="hidden" value="" class="coordinates__elevation__action">
         </div>
         <div>
           <label for="csv-file">Load from csv file:</label>
@@ -41,8 +41,10 @@
                     placeholder="Each row contains one coordinates, each value seperate by space&#10;Name  Latitude  Lontitude&#10;Ex: Can Tho 10.1 100.1"
                     rows="15"
                     wrap="soft" required ></textarea>
+          <p class="error"></p>
           <a class="export-csv" download="data.csv">Export data to csv</a>
         </div>
+        </form>
         <div class="function-area">
           <button data-action="proceed" class="button green">Proceed</button>
           <button data-action="clear" class="button red">Clear</button>
@@ -55,18 +57,18 @@
         <div>Some coordinates are missing elevation value, please choose your action:</div>
 
         <span>Use minimum value of all valid elevation value</span>
-        <button data-action="min" class="button fullwidth items">Use MIN value</button>
+        <button data-src="min" class="button fullwidth items">Use MIN value</button>
         <span>Use maximum value of all valid elevation value</span>
-        <button data-action="max" class="button fullwidth items">Use MAX value</button>
+        <button data-src="max" class="button fullwidth items">Use MAX value</button>
         <span>Load value from
           <a target="_blank" href="https://open-elevation.com/">Open Elevation API</a>
         </span>
-        <button data-action="api" class="button fullwidth items">Load from API</button>
+        <button data-src="api" class="button fullwidth items">Load from API</button>
       </div>
       <div class="selection" hidden>
         <div class="function-area">
-          <button class="button green main__button__back">Back</button>
-          <button class="button red main__button__new">New</button>
+          <button data-action="back" class="button green">Back</button>
+          <button data-action="new" class="button red">New</button>
         </div>
         <p class="error selection__error"></p>
 

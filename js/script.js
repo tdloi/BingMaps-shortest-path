@@ -10,21 +10,10 @@ let C = new Coordinates();
 
 const COORDINATE = {
   elevation: $('.coordinates__elevation'),
-  elevationNullAction: $('.coordinates__elevation__action'),
-
   list: $('.coordinates__list'),
-
   main: $('.main'),
-
   selection: $('.selection'),
   selectionList: $('.selection__list'),
-};
-
-
-const button = {
-  back: $('.main__button__back'),
-  new: $('.main__button__new'),
-  eleSelection: $('.elevation-action'),
 };
 
 
@@ -39,7 +28,6 @@ let SELECTED = [];
 // Use to save chosen action for missing elevation values
 // action: MIN - MAX (of all elevation) - API (load from OpenElevationAPI)
 let MISSING_ELEVATION_LOAD_SRC = undefined;
-
 
 function random(min, max) {
   return (Math.random()*(max-min) + min).toFixed(2);
@@ -62,6 +50,7 @@ function showElement(elementSelector) {
 function hideElement(elementSelector) {
   toggleElement(elementSelector, true);
 }
+
 
 function convertRawStringToCoordinate(raw) {
   // Each string includes: Coordinate name, Elevation, Latitude, Lontitude
@@ -283,17 +272,6 @@ function drawPolyline(marker, neighbors, color='#0e6dd7', group=markerGroup) {
 }
 
 
-function clearInput() {
-  document.querySelectorAll('input').forEach(
-    node => node.value = ""
-  );
-  document.querySelectorAll('.error').forEach(
-    node => node.innerText = ""
-  );
-  COORDINATE.list.value = "";
-}
-
-
 function getElevationArray() {
   // Get a filtered elevation value array
   let ElevationArray = COORDINATE.list.value.split('\n')
@@ -318,19 +296,6 @@ function getElevationMissingValue() {
   return undefined;
 }
 
-button.eleSelection.addEventListener('click', function(e){
-  if (!e.target.classList.contains('items')) return;
-
-  MISSING_ELEVATION_LOAD_SRC = e.target.dataset.action;
-  closeElevationActionMenu(e.target);
-  processData();
-});
-
-function closeElevationActionMenu(self) {
-  self.parentNode.hidden = true;
-  self.parentNode.previousElementSibling.hidden = false;
-}
-
 
 $('.main').addEventListener('click', function mainButtonAction(e) {
   // Only button in main section contains data-action
@@ -338,13 +303,13 @@ $('.main').addEventListener('click', function mainButtonAction(e) {
   if (!action) return;
 
   if (action === 'clear') {
-    clearInput();
+    $('form').reset();
     return;
   }
   if (action === 'proceed') {
     let isInputValid = true;
     // Validate input using HTML5 Constraint validation API
-    document.querySelectorAll('input').forEach(input => {
+    document.querySelectorAll('input, textarea').forEach(input => {
       if (!input.validity.valid) {
         input.nextElementSibling.innerText = input.validationMessage;
         isInputValid = false;
@@ -384,22 +349,34 @@ $('.elevation-action').addEventListener('click', function close(e){
   }
 });
 
-button.back.addEventListener('click', function(){
-  hideElement('.selection');
-  showElement('.main');
-  shortestPathGroup.clearLayers();
-  SELECTED = [];
-  MISSING_ELEVATION_LOAD_SRC = undefined;
+$('.elevation-action').addEventListener('click', function setMissingElevationLoadSrc(e){
+  const src = e.target.dataset.src;
+
+  if (!src) return;
+  MISSING_ELEVATION_LOAD_SRC = src;
+
+  hideElement(this);
+  processData();
 });
 
-button.new.addEventListener('click', function(){
-  hideElement('.selection');
-  showElement('.main');
-  clearInput();
-  markerGroup.clearLayers();
-  shortestPathGroup.clearLayers();
-});
 
+$('.selection').addEventListener('click', function(e){
+  const action = e.target.dataset.action;
+  if (!action) return;
+
+  hideElement(this);
+  showElement('.main');
+  shortestPathGroup.clearLayers();
+
+  if (action === 'back') {
+    SELECTED = [];
+    MISSING_ELEVATION_LOAD_SRC = undefined;
+  }
+  if (action === 'new') {
+    $('form').reset();
+    markerGroup.clearLayers();
+  }
+});
 
 $('.selection').addEventListener('click', function selectItem(e) {
   let label = e.target.dataset.src;
