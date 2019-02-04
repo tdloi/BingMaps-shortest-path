@@ -86,14 +86,13 @@ function processData() {
   $('.selection__list').innerHTML = "";
   markerGroup.clearLayers();
 
-  let listCoordinates = COORDINATES_LIST;
   let listValidMarker = [];
   let listInvalidMarker = [];
 
   const ElevationFilterValue = $('.coordinates__elevation').valueAsNumber || 0;
 
 
-  for (let rawString of listCoordinates) {
+  for (let rawString of COORDINATES_LIST) {
     let c = new Coordinate( ...convertRawStringToCoordinate(rawString) );
     // Make a list marker conbine of valid and invalid marker
     // to keep track of label
@@ -159,20 +158,7 @@ function processData() {
         C.addNeighbor(c1, c2);
     }
   }
-
-  // update list input so that we can export it later
-  if (Object.keys(C.list).length > 0) {
-    let _outputString = "\n";
-    for ( let m of Object.keys(C.list) ) {
-      m = C.list[m];
-      let ele = m.ele === -Infinity ? "" : m.ele;
-      m = [m.name, ele, m.lat, m.lon];
-
-      _outputString += m.join(' ');
-      _outputString += '\n';
-    }
-    $('.coordinates__list').value = _outputString;
-  }
+  syncCoordinateList();
 
   // Draw polyline between each marker of map
   for (let marker of listValidMarker) {
@@ -197,14 +183,25 @@ function processData() {
     Marker.panTo(c);
   }
 
-  function drawPolylines(marker, listNeighbor, _listInvalidMarker) {
-    listNeighbor = listNeighbor.filter(
-      neighbor => !_listInvalidMarker.includes(neighbor)
-    );
-    drawPolyline(marker, listNeighbor);
-  }
 }
 
+function syncCoordinateList() {
+  const listCoordinateLabels = Object.keys(C.list);
+  // update list input so that we can export it later
+  if (listCoordinateLabels.length === 0) return;
+
+  let outputString = "";
+  for ( let label of listCoordinateLabels ) {
+    let m = C.list[label];
+    let ele = m.ele || "";
+    m = [m.name, ele, m.lat, m.lon];
+
+    outputString += m.join(' ');
+    outputString += '\n';
+  }
+
+  $('.coordinates__list').value = outputString.trim();
+}
 
 function drawShortestPath(c1, c2) {
   // Draw a polyline demonstrate shortest path
@@ -231,6 +228,7 @@ function drawShortestPath(c1, c2) {
   } else {
     $('.selection__error').innerHTML = "";
   }
+
   for (let marker of path) {
     let index = path.indexOf(marker);
     if (index === path.length - 1) return;
@@ -324,7 +322,7 @@ $('.elevation-action').addEventListener('click', function chooseLoadingElevation
 });
 
 
-$('.selection').addEventListener('click', function(e){
+$('.selection').addEventListener('click', function selectionButtonAction(e){
   const action = e.target.dataset.action;
   if (!action) return;
 
