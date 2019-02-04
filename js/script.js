@@ -40,12 +40,22 @@ function random(min, max) {
   return (Math.random()*(max-min) + min).toFixed(2);
 }
 
-function showElement(elementSelector) {
-  $(elementSelector).hidden = false;
+// Helper function to toggle element
+// accept input with either elementSelector (as string)
+// or element (as object)
+function toggleElement(element, hideElement) {
+  if (typeof element === 'object') { // pass DOM node
+    element.hidden = hideElement;
+  }
+  else {
+    $(element).hidden = hideElement;
+  }
 }
-
+function showElement(elementSelector) {
+  toggleElement(elementSelector, false);
+}
 function hideElement(elementSelector) {
-  $(elementSelector).hidden = true;
+  toggleElement(elementSelector, true);
 }
 
 function convertRawStringToCoordinate(raw) {
@@ -357,17 +367,16 @@ $('.main').addEventListener('click', function mainButtonAction(e) {
   }
 });
 
-$('.elevation-action').addEventListener('click', function(e){
+$('.elevation-action').addEventListener('click', function close(e){
   const action = e.target.dataset.action;
 
   if (!action) return;
 
   if (action === 'close') {
-    this.hidden = true;
-    this.previousElementSibling.hidden = false;
+    hideElement(this);
+    showElement(this.previousElementSibling); // === main menu
     return;
   }
-
 });
 
 button.back.addEventListener('click', function(){
