@@ -8,13 +8,6 @@ const $ = document.querySelector.bind(document);
 
 let C = new Coordinates();
 
-const COORDINATE = {
-  elevation: $('.coordinates__elevation'),
-  selection: $('.selection'),
-  selectionList: $('.selection__list'),
-};
-
-
 let shortestPathGroup = new L.featureGroup();
 shortestPathGroup.addTo(map);
 
@@ -87,7 +80,7 @@ function processData() {
 
   // clear data before process
   C.list = {};
-  COORDINATE.selectionList.innerHTML = "";
+  $('.selection__list').innerHTML = "";
   markerGroup.clearLayers();
 
   let listCoordinates = COORDINATES_LIST;
@@ -96,7 +89,7 @@ function processData() {
 
   const elevationMissingValue = getElevationMissingValue();
 
-  const ElevationFilterValue = COORDINATE.elevation.valueAsNumber || 0;
+  const ElevationFilterValue = $('.coordinates__elevation').valueAsNumber || 0;
 
 
   for (let rawString of listCoordinates) {
@@ -195,7 +188,7 @@ function processData() {
   }
 
   function addCoordinate(c, valid=true) {
-    COORDINATE.selectionList.innerHTML += `
+    $('.selection__list').innerHTML += `
       <p class="selection__items" data-src="${c.label}">${c.name}</p>
     `;
     C.addCoordinate(c);
@@ -398,8 +391,7 @@ $('.selection').addEventListener('click', function selectItem(e) {
     }
 
     if (SELECTED.length === 2) {
-      let [c1, c2] = SELECTED;
-      drawShortestPath(c1, c2);
+      drawShortestPath([...SELECTED]);
     }
 
   }
