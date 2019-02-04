@@ -6,21 +6,24 @@ import { Marker } from './marker.js';
 
 const $ = document.querySelector.bind(document);
 
+// Store all passed coordinates data and its relationship (adjacency)
+// also elevation value in case loading from API
 let C = new Coordinates();
+
+let markerGroup = new L.featureGroup();
 
 let shortestPathGroup = new L.featureGroup();
 shortestPathGroup.addTo(map);
 
-let markerGroup = new L.featureGroup();
-
 // Only need two coordinate to find shortest path between them, so
 // this value is used to keep track of which coordinate chooses by user
 let SELECTED = [];
-// Use to save chosen action for missing elevation values
-// action: MIN - MAX (of all elevation) - API (load from OpenElevationAPI)
-let MISSING_ELEVATION_LOAD_SRC = undefined;
+// Use to decide whether or not loading  missing elevation from OpenElevation
+// API, default acction will be false and exclude all coordinates don't have
+// elevation value
+let LOAD_ELEVATION_FROM_API = false;
 // List (array) of coordinates get from textarea input
-// it's empty on load because there are no data yet
+// it's empty on load because there are no data yet,
 // will be updated by listening `change` event
 let COORDINATES_LIST;
 
@@ -57,7 +60,7 @@ function convertRawStringToCoordinate(raw) {
   let [lat, lon] = raw.splice(-2, 2);
   // Check if elevation is missing, then check if its value is a number
   // if not, assume it is a part of coordinate name
-  let ele = -Infinity;
+  let ele = null;
   if (raw.length >= 2 &&
       typeof +raw[raw.length - 1] === 'number') {
     ele = raw.pop();
@@ -87,8 +90,6 @@ function processData() {
   let listValidMarker = [];
   let listInvalidMarker = [];
 
-  const elevationMissingValue = getElevationMissingValue();
-
   const ElevationFilterValue = $('.coordinates__elevation').valueAsNumber || 0;
 
 
@@ -104,8 +105,7 @@ function processData() {
 
     if (c.isValid()) {
 
-      if (c.ele === -Infinity &&
-          elevationMissingValue === undefined) {
+      if (c.ele === null && LOAD_ELEVATION_FROM_API) {
           let xhr = new XMLHttpRequest();
           xhr.open('GET', `https://api.open-elevation.com/api/v1/lookup?locations=${c.lat},${c.lon}`, false);
           xhr.onload = function() {
@@ -130,21 +130,16 @@ function processData() {
           xhr.send();
       }
       else {
-        if (c.ele === -Infinity) c.ele = elevationMissingValue;
         if (C.isExisted(c)) c.label = +C.findCoordinate(c);
 
-        if (c.ele >= ElevationFilterValue) {
-          if (listValidMarker.includes(c.label) === false) {
-            listValidMarker.push(c.label);
-          }
-          addCoordinate(c);
-        } else {
-          if (listInvalidMarker.includes(c.label) === false) {
+        if (c.ele <= ElevationFilterValue
+            && listInvalidMarker.includes(c.label) === false) {
             listInvalidMarker.push(c.label);
-          }
-          addCoordinate(c);
         }
-
+        else if (listValidMarker.includes(c.label) === false) {
+            listValidMarker.push(c.label);
+        }
+        addCoordinate(c);
       }
 
     }
@@ -264,30 +259,6 @@ function drawPolyline(marker, neighbors, color='#0e6dd7', group=markerGroup) {
 }
 
 
-function getElevationArray() {
-  // Get a filtered elevation value array
-  let ElevationArray = COORDINATES_LIST
-                        .reduce( function (acc, curr) {
-                            let ele = convertRawStringToCoordinate(curr)[1];
-                            return acc.concat(ele);
-                          }, [] )
-                        .filter(value => value !== -Infinity);
-  return ElevationArray;
-}
-
-function getElevationMissingValue() {
-  let elevationArray = getElevationArray();
-  if (MISSING_ELEVATION_LOAD_SRC === 'min') {
-    return Math.min(...elevationArray);
-  }
-  if (MISSING_ELEVATION_LOAD_SRC === 'max') {
-    return Math.max(...elevationArray);
-  }
-
-  return undefined;
-}
-
-
 $('.main').addEventListener('click', function mainButtonAction(e) {
   // Only button in main section contains data-action
   const action = e.target.dataset.action;
@@ -297,6 +268,7 @@ $('.main').addEventListener('click', function mainButtonAction(e) {
     $('form').reset();
     return;
   }
+
   if (action === 'proceed') {
     let isInputValid = true;
     // Validate input using HTML5 Constraint validation API
@@ -306,22 +278,25 @@ $('.main').addEventListener('click', function mainButtonAction(e) {
         isInputValid = false;
       }
     });
-
     if (!isInputValid) return;
 
-    if (MISSING_ELEVATION_LOAD_SRC !== undefined) {
-      processData();
-      return;
-    }
-
     // check if elevation value is missing in any of coordinate data
-    let ElevationArray = getElevationArray();
-
-    if (ElevationArray.length !== COORDINATES_LIST.length) {
-      hideElement('.main');
+    // and show confirm box if it is
+    let ElevationArray = COORDINATES_LIST
+                          .reduce( function (acc, curr) {
+                              let ele = convertRawStringToCoordinate(curr)[1];
+                              return acc.concat(ele);
+                            }, [] )
+                          .filter(value => value !== null);
+    // if there are no elevation value from coordinate, ignore this it continues
+    // proceed data
+    if (ElevationArray.length !== COORDINATES_LIST.length
+        && ElevationArray.length !== 0) {
+      hideElement(this);
       showElement('.elevation-action');
       return;
     }
+
     processData();
   }
 });
@@ -338,12 +313,12 @@ $('.elevation-action').addEventListener('click', function close(e){
   }
 });
 
-$('.elevation-action').addEventListener('click', function setMissingElevationLoadSrc(e){
+$('.elevation-action').addEventListener('click', function chooseLoadingElevation(e){
   const src = e.target.dataset.src;
 
   if (!src) return;
-  MISSING_ELEVATION_LOAD_SRC = src;
 
+  LOAD_ELEVATION_FROM_API = !!src;
   hideElement(this);
   processData();
 });
@@ -359,7 +334,6 @@ $('.selection').addEventListener('click', function(e){
 
   if (action === 'back') {
     SELECTED = [];
-    MISSING_ELEVATION_LOAD_SRC = undefined;
   }
   if (action === 'new') {
     $('form').reset();

@@ -54,16 +54,11 @@
       <div class="elevation-action" hidden>
         <button data-action="close" class="button red fullwidth"> Cancel </button>
 
-        <div>Some coordinates are missing elevation value, please choose your action:</div>
-
-        <span>Use minimum value of all valid elevation value</span>
-        <button data-src="min" class="button fullwidth items">Use MIN value</button>
-        <span>Use maximum value of all valid elevation value</span>
-        <button data-src="max" class="button fullwidth items">Use MAX value</button>
-        <span>Load value from
-          <a target="_blank" href="https://open-elevation.com/">Open Elevation API</a>
-        </span>
-        <button data-src="api" class="button fullwidth items">Load from API</button>
+        <div>Some coordinates are missing elevation value, do you want to load elevation from external provider:</div>
+        <div class="function-area">
+          <button data-src="true" class="button green items">Yes</button>
+          <button data-src="false" class="button red items">No</button>
+        </div>
       </div>
       <div class="selection" hidden>
         <div class="function-area">
