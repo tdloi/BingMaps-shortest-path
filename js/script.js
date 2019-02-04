@@ -392,12 +392,13 @@ $('#csv-file').addEventListener('change', function readContentIntoInputList() {
     // Each column from csv file is seperated by comma
     // We need to replace it with space so that we can filter it later
     $('.coordinates__list').value = fi.target.result.replace(/,/g, ' ');
+
+    // trigger event to force reload COORDINATE_LIST values
+    $('textarea').dispatchEvent(new Event('change'));
   };
 
   reader.readAsText(selectedFile);
 
-  // trigger event to force reload COORDINATE_LIST values
-  document.querySelector('textarea').dispatchEvent(new Event('change'));
 });
 
 
