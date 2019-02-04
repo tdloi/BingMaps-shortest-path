@@ -33,7 +33,12 @@ shortestPathGroup.addTo(map);
 
 let markerGroup = new L.featureGroup();
 
-let listSelection = [];
+// Only need two coordinate to find shortest path between them, so
+// this value is used to keep track of which coordinate chooses by user
+let SELECTED = [];
+// Use to save chosen action for missing elevation values
+// action: MIN - MAX (of all elevation) - API (load from OpenElevationAPI)
+let MISSING_ELEVATION_LOAD_SRC = undefined;
 
 
 function random(min, max) {
@@ -303,10 +308,10 @@ function getElevationArray() {
 
 function getElevationMissingValue() {
   let elevationArray = getElevationArray();
-  if (COORDINATE.elevationNullAction.value === 'min') {
+  if (MISSING_ELEVATION_LOAD_SRC === 'min') {
     return Math.min(...elevationArray);
   }
-  if (COORDINATE.elevationNullAction.value === 'max') {
+  if (MISSING_ELEVATION_LOAD_SRC === 'max') {
     return Math.max(...elevationArray);
   }
 
@@ -316,7 +321,7 @@ function getElevationMissingValue() {
 button.eleSelection.addEventListener('click', function(e){
   if (!e.target.classList.contains('items')) return;
 
-  COORDINATE.elevationNullAction.value = e.target.dataset.action;
+  MISSING_ELEVATION_LOAD_SRC = e.target.dataset.action;
   closeElevationActionMenu(e.target);
   processData();
 });
@@ -348,7 +353,7 @@ $('.main').addEventListener('click', function mainButtonAction(e) {
 
     if (!isInputValid) return;
 
-    if (COORDINATE.elevationNullAction.value !== "") {
+    if (MISSING_ELEVATION_LOAD_SRC !== undefined) {
       processData();
       return;
     }
@@ -383,8 +388,8 @@ button.back.addEventListener('click', function(){
   hideElement('.selection');
   showElement('.main');
   shortestPathGroup.clearLayers();
-  listSelection = [];
-  COORDINATE.elevationNullAction.value = "";
+  SELECTED = [];
+  MISSING_ELEVATION_LOAD_SRC = undefined;
 });
 
 button.new.addEventListener('click', function(){
@@ -396,9 +401,9 @@ button.new.addEventListener('click', function(){
 });
 
 
-COORDINATE.selection.addEventListener('click', function selectItem(e) {
+$('.selection').addEventListener('click', function selectItem(e) {
   let label = e.target.dataset.src;
-  // Click on selection item gap or selected item
+  // Avoid firing event when clicking on selection item gap or selected item
   if (!label || e.target.classList.contains('selection__items--selected')) return;
 
   let marker = C.list[label];
@@ -407,10 +412,11 @@ COORDINATE.selection.addEventListener('click', function selectItem(e) {
 
   if (e.target.classList.contains('selection__items')) {
     e.target.classList.add('selection__items--selected');
-    listSelection.push(label);
+    SELECTED.push(label);
 
-    if (listSelection.length === 3) {
-      let popLabel = listSelection.shift();
+    if (SELECTED.length === 3) {
+      let popLabel = SELECTED.shift();
+      // Remove selected class from pop label
       document.querySelectorAll('.selection__items--selected').forEach((target) => {
         if (target.dataset.src === popLabel) {
           target.classList.remove('selection__items--selected');
@@ -418,8 +424,8 @@ COORDINATE.selection.addEventListener('click', function selectItem(e) {
       });
     }
 
-    if (listSelection.length === 2) {
-      let [c1, c2] = listSelection;
+    if (SELECTED.length === 2) {
+      let [c1, c2] = SELECTED;
       drawShortestPath(c1, c2);
     }
 
