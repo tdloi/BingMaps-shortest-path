@@ -10,8 +10,6 @@ let C = new Coordinates();
 
 const COORDINATE = {
   elevation: $('.coordinates__elevation'),
-  list: $('.coordinates__list'),
-  main: $('.main'),
   selection: $('.selection'),
   selectionList: $('.selection__list'),
 };
@@ -28,6 +26,10 @@ let SELECTED = [];
 // Use to save chosen action for missing elevation values
 // action: MIN - MAX (of all elevation) - API (load from OpenElevationAPI)
 let MISSING_ELEVATION_LOAD_SRC = undefined;
+// List (array) of coordinates get from textarea input
+// it's empty on load because there are no data yet
+// will be updated by listening `change` event
+let COORDINATES_LIST;
 
 function random(min, max) {
   return (Math.random()*(max-min) + min).toFixed(2);
@@ -88,10 +90,7 @@ function processData() {
   COORDINATE.selectionList.innerHTML = "";
   markerGroup.clearLayers();
 
-
-  let listCoordinates = COORDINATE.list.value
-                          .replace(/\t/g, ' ')
-                          .split('\n').filter( value => value !== "" );
+  let listCoordinates = COORDINATES_LIST;
   let listValidMarker = [];
   let listInvalidMarker = [];
 
@@ -184,7 +183,7 @@ function processData() {
       _outputString += m.join(' ');
       _outputString += '\n';
     }
-    COORDINATE.list.value = _outputString;
+    $('.coordinates__list').value = _outputString;
   }
 
   // Draw polyline between each marker of map
@@ -274,13 +273,12 @@ function drawPolyline(marker, neighbors, color='#0e6dd7', group=markerGroup) {
 
 function getElevationArray() {
   // Get a filtered elevation value array
-  let ElevationArray = COORDINATE.list.value.split('\n')
-            .filter(value => value !== "")
-            .reduce( function (acc, curr) {
-                let ele = convertRawStringToCoordinate(curr)[1];
-                return acc.concat(ele);
-              }, [] )
-            .filter(value => value !== -Infinity);
+  let ElevationArray = COORDINATES_LIST
+                        .reduce( function (acc, curr) {
+                            let ele = convertRawStringToCoordinate(curr)[1];
+                            return acc.concat(ele);
+                          }, [] )
+                        .filter(value => value !== -Infinity);
   return ElevationArray;
 }
 
@@ -324,11 +322,9 @@ $('.main').addEventListener('click', function mainButtonAction(e) {
     }
 
     // check if elevation value is missing in any of coordinate data
-    let cdnList = COORDINATE.list.value.split('\n')
-                    .filter(value => value !== "");
     let ElevationArray = getElevationArray();
 
-    if (ElevationArray.length !== cdnList.length) {
+    if (ElevationArray.length !== COORDINATES_LIST.length) {
       hideElement('.main');
       showElement('.elevation-action');
       return;
@@ -411,10 +407,8 @@ $('.selection').addEventListener('click', function selectItem(e) {
 
 
 $('.export-csv').addEventListener('click', function exportCSV() {
-  let list = $('.coordinates__list').value.split('\n')
-                .filter(value => value !== "");
   let data = "data:text/csv;charset=utf-8,";
-  for (let value of list) {
+  for (let value of COORDINATES_LIST) {
     value = convertRawStringToCoordinate(value);
     if (value[1] === -Infinity) value[1] = "";
 
@@ -435,4 +429,15 @@ $('#csv-file').addEventListener('change', function readContentIntoInputList() {
   };
 
   reader.readAsText(selectedFile);
+
+  // trigger event to force reload COORDINATE_LIST values
+  document.querySelector('textarea').dispatchEvent(new Event('change'));
+});
+
+
+$('textarea').addEventListener('change', function assignValueForCoordinateList() {
+  COORDINATES_LIST = $('.coordinates__list').value
+                          .replace(/\t/g, ' ')
+                          .split('\n')
+                          .filter(value => value !== "");
 });
