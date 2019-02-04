@@ -381,7 +381,7 @@ $('.export-csv').addEventListener('click', function exportCSV() {
   let data = "data:text/csv;charset=utf-8,";
   for (let value of COORDINATES_LIST) {
     value = convertRawStringToCoordinate(value);
-    if (value[1] === -Infinity) value[1] = "";
+    if (value[1] === null) value[1] = "";
 
     data += value.join(',');
     data += '\r\n';
