@@ -1,4 +1,4 @@
-import { Coordinate, Coordinates, HaversineFormula } from './coordinates.js';
+import { Coordinate, Coordinates, HaversineFormula as calculateDistant } from './coordinates.js';
 import { Graph } from './graph.js';
 import { Marker } from './marker.js';
 
@@ -86,66 +86,94 @@ function processData() {
   $('.selection__list').innerHTML = "";
   markerGroup.clearLayers();
 
-  let listValidMarker = [];
-  let listInvalidMarker = [];
+  let listValidMarkerLabels = [];
+  let listInvalidMarkerLabels = [];
 
   const ElevationFilterValue = $('.coordinates__elevation').valueAsNumber || 0;
 
+  // In case there are no elevation values from input, ignore it completely
+  // but if it is, only ignore coordinates don't have
+  const noElevationProvided = COORDINATES_LIST
+                                .map( value => convertRawStringToCoordinate(value)[1])
+                                .filter(value => value !== null)
+                                .length === 0;
 
   for (let rawString of COORDINATES_LIST) {
     let c = new Coordinate( ...convertRawStringToCoordinate(rawString) );
-    // Make a list marker conbine of valid and invalid marker
+    // Make a list marker combine of valid and invalid marker
     // to keep track of label
-    let listMarker = listValidMarker.concat(listInvalidMarker)
-                        .map(value => +value);
+    let listMarkerLabels = listValidMarkerLabels.concat(listInvalidMarkerLabels)
+                              .map(value => +value);
 
-    let index = listMarker.length === 0 ? 0 : Math.max( ...listMarker );
+    let index = listMarkerLabels.length === 0 ? 0 : Math.max( ...listMarkerLabels );
     c.label = index + 1;
 
     if (c.isValid()) {
 
       if (c.ele === null && LOAD_ELEVATION_FROM_API) {
           let xhr = new XMLHttpRequest();
-          xhr.open('GET', `https://api.open-elevation.com/api/v1/lookup?locations=${c.lat},${c.lon}`, false);
+          xhr.open('GET', `https://api.open-elevation.com/api/v1/lookup?locations=${c.lat},${c.lon}`);
           xhr.onload = function() {
             if (this.readyState === 4 && this.status === 200) {
-              c.ele = JSON.parse(this.responseText).results[0].elevation;
-
-              if (C.isExisted(c)) c.label = +C.findCoordinate(c);
-              if (c.ele >= ElevationFilterValue) {
-                if (listValidMarker.includes(c.label) === false) {
-                  listValidMarker.push(c.label);
-                }
-                addCoordinate(c);
-              } else {
-                if (listInvalidMarker.includes(c.label) === false) {
-                  listInvalidMarker.push(c.label);
-                }
-                addCoordinate(c);
-              }
-
+              c.ele = new String(JSON.parse(this.responseText).results[0].elevation);
             }
+            if (C.isExisted(c)) c.label = +C.findCoordinate(c);
+
+            const ignoreNullEle = c.ele === null && noElevationProvided;
+
+            const isValidEle = ignoreNullEle || c.ele >= ElevationFilterValue;
+
+            if (isValidEle && listValidMarkerLabels.includes(c.label) === false)
+              listValidMarkerLabels.push(c.label);
+            else if (listInvalidMarkerLabels.includes(c.label) === false)
+              listInvalidMarkerLabels.push(c.label);
+
+            addCoordinate(c);
           };
           xhr.send();
       }
       else {
         if (C.isExisted(c)) c.label = +C.findCoordinate(c);
 
-        if (c.ele <= ElevationFilterValue
-            && listInvalidMarker.includes(c.label) === false) {
-            listInvalidMarker.push(c.label);
-        }
-        else if (listValidMarker.includes(c.label) === false) {
-            listValidMarker.push(c.label);
-        }
+        const ignoreNullEle = c.ele === null && noElevationProvided;
+
+        const isValidEle = ignoreNullEle || c.ele >= ElevationFilterValue;
+
+        if (isValidEle && listValidMarkerLabels.includes(c.label) === false)
+          listValidMarkerLabels.push(c.label);
+        else if (listInvalidMarkerLabels.includes(c.label) === false)
+          listInvalidMarkerLabels.push(c.label);
+
         addCoordinate(c);
       }
 
     }
   }
 
+  loadAdjacency(listValidMarkerLabels, radius);
+  syncCoordinateList();
 
-  let _markers = [...listValidMarker];
+  // Draw polyline between each marker of map
+  for (let marker of listValidMarkerLabels) {
+    if (marker !== undefined) {
+      drawAdjacency( marker,
+                     Object.keys(C.list[marker].neighbors) );
+    }
+  }
+
+  function addCoordinate(c) {
+    $('.selection__list').innerHTML += `
+      <p class="selection__items" data-src="${c.label}">${c.name}</p>
+    `;
+    C.addCoordinate(c);
+
+    Marker.addToMap(c, markerGroup);
+    Marker.panTo(c);
+  }
+}
+
+function loadAdjacency(listValidMarkerLabels, radius) {
+  let _markers = [...listValidMarkerLabels];
   // Nested lopp through all coordinate in list, then check distant
   // between two coordinate if their distant smaller than radius,
   // they will be treated as adjency vertice
@@ -154,35 +182,10 @@ function processData() {
     for (let coordinate of _markers) {
       let c1 = C.list[c];
       let c2 = C.list[coordinate];
-      if ( HaversineFormula(c1, c2) <= radius )
+      if ( calculateDistant(c1, c2) <= radius )
         C.addNeighbor(c1, c2);
     }
   }
-  syncCoordinateList();
-
-  // Draw polyline between each marker of map
-  for (let marker of listValidMarker) {
-    if (marker !== undefined) {
-      drawPolyline( marker,
-                    Object.keys(C.list[marker].neighbors) );
-    }
-  }
-
-  function addCoordinate(c, valid=true) {
-    $('.selection__list').innerHTML += `
-      <p class="selection__items" data-src="${c.label}">${c.name}</p>
-    `;
-    C.addCoordinate(c);
-
-    if (valid === true) {
-      Marker.addToMap(c, markerGroup);
-    } else {
-      Marker.addToMap(c, markerGroup, 'red');
-    }
-
-    Marker.panTo(c);
-  }
-
 }
 
 function syncCoordinateList() {
@@ -203,7 +206,7 @@ function syncCoordinateList() {
   $('.coordinates__list').value = outputString.trim();
 }
 
-function drawShortestPath(c1, c2) {
+function proceedDrawingShortestPath(c1, c2) {
   // Draw a polyline demonstrate shortest path
   // between coordinate c1 and c2
 
@@ -211,49 +214,56 @@ function drawShortestPath(c1, c2) {
                  // a list of object with key is coordinate label and
                  // value is an object contains adjacent vertice
                  // { "1" : { "2", "3", "4" } }
-  for (let marker of Object.keys(C.list)
-                      .map(key => parseInt(key, 10))) {
+  const listLabel = Object.keys(C.list)
+                      .map(key => parseInt(key, 10));
+  for (let marker of listLabel) {
     _map[marker] = C.list[marker].neighbors;
   }
 
-  let g = new Graph(_map);
-  let path = g.findShortestPath(c1, c2);
-  shortestPathGroup.clearLayers();
+  const g = new Graph(_map);
+  const path = g.findShortestPath(c1, c2);
 
   if (path === null) {
-    $('.selection__error').innerHTML = `
-      No shortest path found
-    `;
+    $('.selection__error').innerHTML = "No shortest path found";
     return;
-  } else {
+  }
+  else {
     $('.selection__error').innerHTML = "";
   }
 
-  for (let marker of path) {
-    let index = path.indexOf(marker);
-    if (index === path.length - 1) return;
-    drawPolyline(
-      marker,
-      [path[index + 1]],
-      'red',
-      shortestPathGroup
-    );
-  }
+  drawShortestPath(path);
 }
 
-
-
-function drawPolyline(marker, neighbors, color='#0e6dd7', group=markerGroup) {
-  // draw polyline between a marker and all of its neightbors
-  // neightbors contains list of coordinates label in C
-  let latlngs = neighbors.map(
+function drawAdjacency(marker, neighbors, color='#0e6dd7', group=markerGroup) {
+  // draw polyline between a marker and all of its neightbors (adjacency)
+  // neightbors contains list of coordinates label in C can query through C.list[label]
+  // it will map neightbors array into latlongs multi-dimension array formats
+  let latlons = neighbors.map(
     neighborMarker => [
       [C.list[marker].lat, C.list[marker].lon],
       [C.list[neighborMarker].lat, C.list[neighborMarker].lon]
     ]
   );
+  Marker.drawPolyline(latlons, color, group);
+}
 
-  L.polyline(latlngs, {color: color}).addTo(group);
+function drawShortestPath(path) {
+  shortestPathGroup.clearLayers();
+  // `path` is an array of labels lie on the shortest path from coordinate x to y
+  // returned from Graph.findShortestPath
+
+  // map all label in `path` with its next on the senquence
+  // to pass to Marker.drawPolyline
+  let latlons = path.map( function(currrentLabel, i, arr) {
+    const nextLabel = arr[i + 1];
+    if (nextLabel === undefined) return [];
+
+    return [
+      [C.list[currrentLabel].lat, C.list[currrentLabel].lon],
+      [C.list[nextLabel].lat, C.list[nextLabel].lon]
+    ];
+  });
+  Marker.drawPolyline(latlons, 'red', shortestPathGroup);
 }
 
 
@@ -280,12 +290,9 @@ $('.main').addEventListener('click', function mainButtonAction(e) {
 
     // check if elevation value is missing in any of coordinate data
     // and show confirm box if it is
-    let ElevationArray = COORDINATES_LIST
-                          .reduce( function (acc, curr) {
-                              let ele = convertRawStringToCoordinate(curr)[1];
-                              return acc.concat(ele);
-                            }, [] )
-                          .filter(value => value !== null);
+    let ElevationArray =  COORDINATES_LIST
+                            .map( value => convertRawStringToCoordinate(value)[1])
+                            .filter(value => value !== null);
     // if there are no elevation value from coordinate, ignore this it continues
     // proceed data
     if (ElevationArray.length !== COORDINATES_LIST.length
@@ -363,7 +370,7 @@ $('.selection').addEventListener('click', function selectItem(e) {
     }
 
     if (SELECTED.length === 2) {
-      drawShortestPath([...SELECTED]);
+      proceedDrawingShortestPath([...SELECTED]);
     }
 
   }
