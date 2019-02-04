@@ -7,21 +7,15 @@ import { Marker } from './marker.js';
 const $ = document.querySelector.bind(document);
 
 // Store all passed coordinates data and its relationship (adjacency)
-// also elevation value in case loading from API
 let C = new Coordinates();
 
 let markerGroup = new L.featureGroup();
-
 let shortestPathGroup = new L.featureGroup();
 shortestPathGroup.addTo(map);
 
 // Only need two coordinate to find shortest path between them, so
 // this value is used to keep track of which coordinate chooses by user
 let SELECTED = [];
-// Use to decide whether or not loading  missing elevation from OpenElevation
-// API, default acction will be false and exclude all coordinates don't have
-// elevation value
-let LOAD_ELEVATION_FROM_API = false;
 // List (array) of coordinates get from textarea input
 // it's empty on load because there are no data yet,
 // will be updated by listening `change` event
@@ -51,21 +45,14 @@ function hideElement(elementSelector) {
 
 
 function convertRawStringToCoordinate(raw) {
-  // Each string includes: Coordinate name, Elevation, Latitude, Lontitude
+  // Each string includes: Coordinate name, Latitude, Lontitude
   // seperated by a space, so to avoid space in name, we need get
-  // lat and lon first then get elevation
-  raw = raw.split(' ').filter(
-    value => value !== ""
-  );
+  // lat and lon first
+  raw = raw.split(' ')
+           .filter( value => value !== "" );
   let [lat, lon] = raw.splice(-2, 2);
-  // Check if elevation is missing, then check if its value is a number
-  // if not, assume it is a part of coordinate name
-  let ele = null;
-  if (raw.length >= 2 &&
-      typeof +raw[raw.length - 1] === 'number') {
-    ele = raw.pop();
-  }
-  return [raw.join(' '), ele, lat, lon];
+
+  return [raw.join(' '), lat, lon];
 }
 
 
@@ -86,91 +73,44 @@ function processData() {
   $('.selection__list').innerHTML = "";
   markerGroup.clearLayers();
 
-  let listValidMarkerLabels = [];
-  let listInvalidMarkerLabels = [];
-
-  const ElevationFilterValue = $('.coordinates__elevation').valueAsNumber || 0;
-
-  // In case there are no elevation values from input, ignore it completely
-  // but if it is, only ignore coordinates don't have
-  const noElevationProvided = COORDINATES_LIST
-                                .map( value => convertRawStringToCoordinate(value)[1])
-                                .filter(value => value !== null)
-                                .length === 0;
+  // Use to keep track of index of label to avoid collision
+  let listMarkerLabels = [];
 
   for (let rawString of COORDINATES_LIST) {
     let c = new Coordinate( ...convertRawStringToCoordinate(rawString) );
-    // Make a list marker combine of valid and invalid marker
-    // to keep track of label
-    let listMarkerLabels = listValidMarkerLabels.concat(listInvalidMarkerLabels)
-                              .map(value => +value);
 
     let index = listMarkerLabels.length === 0 ? 0 : Math.max( ...listMarkerLabels );
     c.label = index + 1;
 
     if (c.isValid()) {
+      if (C.isExisted(c)) c.label = +C.findCoordinate(c);
 
-      if (c.ele === null && LOAD_ELEVATION_FROM_API) {
-          let xhr = new XMLHttpRequest();
-          xhr.open('GET', `https://api.open-elevation.com/api/v1/lookup?locations=${c.lat},${c.lon}`);
-          xhr.onload = function() {
-            if (this.readyState === 4 && this.status === 200) {
-              c.ele = new String(JSON.parse(this.responseText).results[0].elevation);
-            }
-            if (C.isExisted(c)) c.label = +C.findCoordinate(c);
+      if (listMarkerLabels.includes(c.label) === false)
+        listMarkerLabels.push(c.label);
 
-            const ignoreNullEle = c.ele === null && noElevationProvided;
+      $('.selection__list').innerHTML += `
+        <p class="selection__items" data-src="${c.label}">${c.name}</p>
+      `;
+      C.addCoordinate(c);
 
-            const isValidEle = ignoreNullEle || c.ele >= ElevationFilterValue;
-
-            if (isValidEle && listValidMarkerLabels.includes(c.label) === false)
-              listValidMarkerLabels.push(c.label);
-            else if (listInvalidMarkerLabels.includes(c.label) === false)
-              listInvalidMarkerLabels.push(c.label);
-
-            addCoordinate(c);
-          };
-          xhr.send();
-      }
-      else {
-        if (C.isExisted(c)) c.label = +C.findCoordinate(c);
-
-        const ignoreNullEle = c.ele === null && noElevationProvided;
-
-        const isValidEle = ignoreNullEle || c.ele >= ElevationFilterValue;
-
-        if (isValidEle && listValidMarkerLabels.includes(c.label) === false)
-          listValidMarkerLabels.push(c.label);
-        else if (listInvalidMarkerLabels.includes(c.label) === false)
-          listInvalidMarkerLabels.push(c.label);
-
-        addCoordinate(c);
-      }
-
+      Marker.addToMap(c, markerGroup);
+      Marker.panTo(c);
     }
   }
 
-  loadAdjacency(listValidMarkerLabels, radius);
+
+  loadAdjacency(listMarkerLabels, radius);
   syncCoordinateList();
 
   // Draw polyline between each marker of map
-  for (let marker of listValidMarkerLabels) {
+  for (let marker of listMarkerLabels) {
     if (marker !== undefined) {
       drawAdjacency( marker,
                      Object.keys(C.list[marker].neighbors) );
     }
   }
-
-  function addCoordinate(c) {
-    $('.selection__list').innerHTML += `
-      <p class="selection__items" data-src="${c.label}">${c.name}</p>
-    `;
-    C.addCoordinate(c);
-
-    Marker.addToMap(c, markerGroup);
-    Marker.panTo(c);
-  }
 }
+
 
 function loadAdjacency(listValidMarkerLabels, radius) {
   let _markers = [...listValidMarkerLabels];
@@ -188,6 +128,7 @@ function loadAdjacency(listValidMarkerLabels, radius) {
   }
 }
 
+
 function syncCoordinateList() {
   const listCoordinateLabels = Object.keys(C.list);
   // update list input so that we can export it later
@@ -196,8 +137,7 @@ function syncCoordinateList() {
   let outputString = "";
   for ( let label of listCoordinateLabels ) {
     let m = C.list[label];
-    let ele = m.ele || "";
-    m = [m.name, ele, m.lat, m.lon];
+    m = [m.name, m.lat, m.lon];
 
     outputString += m.join(' ');
     outputString += '\n';
@@ -205,6 +145,7 @@ function syncCoordinateList() {
 
   $('.coordinates__list').value = outputString.trim();
 }
+
 
 function proceedDrawingShortestPath(c1, c2) {
   // Draw a polyline demonstrate shortest path
@@ -234,6 +175,7 @@ function proceedDrawingShortestPath(c1, c2) {
   drawShortestPath(path);
 }
 
+
 function drawAdjacency(marker, neighbors, color='#0e6dd7', group=markerGroup) {
   // draw polyline between a marker and all of its neightbors (adjacency)
   // neightbors contains list of coordinates label in C can query through C.list[label]
@@ -246,6 +188,7 @@ function drawAdjacency(marker, neighbors, color='#0e6dd7', group=markerGroup) {
   );
   Marker.drawPolyline(latlons, color, group);
 }
+
 
 function drawShortestPath(path) {
   shortestPathGroup.clearLayers();
@@ -288,46 +231,9 @@ $('.main').addEventListener('click', function mainButtonAction(e) {
     });
     if (!isInputValid) return;
 
-    // check if elevation value is missing in any of coordinate data
-    // and show confirm box if it is
-    let ElevationArray =  COORDINATES_LIST
-                            .map( value => convertRawStringToCoordinate(value)[1])
-                            .filter(value => value !== null);
-    // if there are no elevation value from coordinate, ignore this it continues
-    // proceed data
-    if (ElevationArray.length !== COORDINATES_LIST.length
-        && ElevationArray.length !== 0) {
-      hideElement(this);
-      showElement('.elevation-action');
-      return;
-    }
-
     processData();
   }
 });
-
-$('.elevation-action').addEventListener('click', function close(e){
-  const action = e.target.dataset.action;
-
-  if (!action) return;
-
-  if (action === 'close') {
-    hideElement(this);
-    showElement(this.previousElementSibling); // === main menu
-    return;
-  }
-});
-
-$('.elevation-action').addEventListener('click', function chooseLoadingElevation(e){
-  const src = e.target.dataset.src;
-
-  if (!src) return;
-
-  LOAD_ELEVATION_FROM_API = !!src;
-  hideElement(this);
-  processData();
-});
-
 
 $('.selection').addEventListener('click', function selectionButtonAction(e){
   const action = e.target.dataset.action;
@@ -349,22 +255,22 @@ $('.selection').addEventListener('click', function selectionButtonAction(e){
 $('.selection').addEventListener('click', function selectItem(e) {
   let label = e.target.dataset.src;
   // Avoid firing event when clicking on selection item gap or selected item
-  if (!label || e.target.classList.contains('selection__items--selected')) return;
+  if (!label || e.target.classList.contains('selected')) return;
 
   let marker = C.list[label];
   Marker.openPopup(marker, markerGroup);
   Marker.panTo(marker);
 
   if (e.target.classList.contains('selection__items')) {
-    e.target.classList.add('selection__items--selected');
+    e.target.classList.add('selected');
     SELECTED.push(label);
 
     if (SELECTED.length === 3) {
       let popLabel = SELECTED.shift();
       // Remove selected class from pop label
-      document.querySelectorAll('.selection__items--selected').forEach((target) => {
+      document.querySelectorAll('.selected').forEach((target) => {
         if (target.dataset.src === popLabel) {
-          target.classList.remove('selection__items--selected');
+          target.classList.remove('selected');
         }
       });
     }
@@ -381,7 +287,6 @@ $('.export-csv').addEventListener('click', function exportCSV() {
   let data = "data:text/csv;charset=utf-8,";
   for (let value of COORDINATES_LIST) {
     value = convertRawStringToCoordinate(value);
-    if (value[1] === null) value[1] = "";
 
     data += value.join(',');
     data += '\r\n';

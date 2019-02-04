@@ -1,42 +1,22 @@
 export const Marker = {
   // Add a marker to FeatureGroup then add it to map
-  addToMap: function(marker, group, iconPath='') {
-    let popup = `<strong>${marker.name}</strong><br>
-                 Lat: ${marker.lat}<br>
-                 Lon: ${marker.lon}`;
-    if (marker.ele !== null) {
-      popup += `<br>Elevation: ${marker.ele} m`;
-    }
-
+  addToMap: function(marker, group) {
     L.marker([marker.lat, marker.lon]).addTo(group)
-      .bindPopup(popup);
-    if (iconPath !== '') {
-      if (iconPath === 'red') iconPath = "img/marker-red.png";
-      // Change iconUrl will result in relative path of Leaflet unpkg path
-      // Leaflet icon is joined imagePath and iconUrl, this is
-      // workaround by removed iconUrl (default to marker-icon.png) then
-      // set icon imagePath directly
-      L.Icon.Default.prototype.options.iconUrl = "";
-      L.Icon.Default.imagePath = iconPath;
-    }
-
+      .bindPopup(`<strong>${marker.name}</strong><br>
+                  Lat: ${marker.lat}<br>
+                  Lon: ${marker.lon}`);
 
     group.addTo(map);
   },
 
   // Bind and open popup of a marker in map.
   openPopup: function(marker, group) {
-    // Currently there are no way to open a binded popup
-    // so we need to re-bind it then use openPopup method
-    let popup = `<strong>${marker.name}</strong><br>
-                 Lat: ${marker.lat}<br>
-                 Lon: ${marker.lon}`;
-    if (marker.ele !== null) {
-      popup += `<br>Elevation: ${marker.ele} m`;
-    }
-
+    // Currently I don't know how to open a binded popup
+    // so I need to re-bind it then use openPopup method
     L.marker([marker.lat, marker.lon]).addTo(group)
-      .bindPopup(popup)
+      .bindPopup(`<strong>${marker.name}</strong><br>
+                  Lat: ${marker.lat}<br>
+                  Lon: ${marker.lon}`)
       .openPopup();
   },
 

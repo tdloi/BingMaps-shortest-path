@@ -127,24 +127,12 @@ input:invalid:focus {
   cursor: pointer;
 }
 
-.selection__items--selected {
+.selection__items.selected {
   background: var(--green);
 }
 
 .selection__error {
   margin-left: 1rem;
-}
-
-.elevation-action {
-  padding: 2rem 1rem;
-}
-.elevation-action div {
-  margin-bottom: 1rem;
-  font-size: 1.2rem;
-}
-
-.elevation-action span {
-  padding-bottom: -1rem;
 }
 
 .export-csv {
