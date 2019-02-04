@@ -22,11 +22,8 @@ const COORDINATE = {
 
 
 const button = {
-  proceed: $('.main__button__proceed'),
-  clear: $('.main__button__clear'),
   back: $('.main__button__back'),
   new: $('.main__button__new'),
-  cancel: $('.main__button__cancel'),
   eleSelection: $('.elevation-action'),
 };
 
@@ -43,6 +40,13 @@ function random(min, max) {
   return (Math.random()*(max-min) + min).toFixed(2);
 }
 
+function showElement(elementSelector) {
+  $(elementSelector).hidden = false;
+}
+
+function hideElement(elementSelector) {
+  $(elementSelector).hidden = true;
+}
 
 function convertRawStringToCoordinate(raw) {
   // Each string includes: Coordinate name, Elevation, Latitude, Lontitude
@@ -64,8 +68,8 @@ function convertRawStringToCoordinate(raw) {
 
 
 function processData() {
-  COORDINATE.selection.hidden = false;
-  COORDINATE.main.hidden = true;
+  showElement('.selection');
+  hideElement('.main');
 
   const radius = function() {
     let r = $('.coordinates__radius');
@@ -307,59 +311,76 @@ button.eleSelection.addEventListener('click', function(e){
   processData();
 });
 
-button.cancel.addEventListener('click', function() {
-  closeElevationActionMenu(this);
-});
-
 function closeElevationActionMenu(self) {
   self.parentNode.hidden = true;
   self.parentNode.previousElementSibling.hidden = false;
 }
 
-button.clear.addEventListener('click', clearInput);
 
-button.proceed.addEventListener('click', function(){
-  // Validate input using HTML5 Constraint validation API
-  const radius = $('.coordinates__radius');
-  const elevation = $('.coordinates__elevation');
-  const list = COORDINATE.list;
-  if (radius.validity.valid === false ||
-      list.validity.valid === false ||
-      elevation.validity === false) {
-      $('.coordinates__radius__error').innerText = radius.validationMessage;
-      $('.coordinates__elevation__error').innerText = elevation.validationMessage;
-      $('.coordinates__list__error').innerText = list.validationMessage;
+$('.main').addEventListener('click', function mainButtonAction(e) {
+  // Only button in main section contains data-action
+  const action = e.target.dataset.action;
+  if (!action) return;
+
+  if (action === 'clear') {
+    clearInput();
+    return;
   }
-  else {
+  if (action === 'proceed') {
+    let isInputValid = true;
+    // Validate input using HTML5 Constraint validation API
+    document.querySelectorAll('input').forEach(input => {
+      if (!input.validity.valid) {
+        input.nextElementSibling.innerText = input.validationMessage;
+        isInputValid = false;
+      }
+    });
+
+    if (!isInputValid) return;
+
     if (COORDINATE.elevationNullAction.value !== "") {
       processData();
       return;
     }
+
     // check if elevation value is missing in any of coordinate data
     let cdnList = COORDINATE.list.value.split('\n')
                     .filter(value => value !== "");
     let ElevationArray = getElevationArray();
 
     if (ElevationArray.length !== cdnList.length) {
-      COORDINATE.main.hidden = true;
-      button.eleSelection.hidden = false;
+      hideElement('.main');
+      showElement('.elevation-action');
       return;
     }
     processData();
   }
 });
 
+$('.elevation-action').addEventListener('click', function(e){
+  const action = e.target.dataset.action;
+
+  if (!action) return;
+
+  if (action === 'close') {
+    this.hidden = true;
+    this.previousElementSibling.hidden = false;
+    return;
+  }
+
+});
+
 button.back.addEventListener('click', function(){
-  COORDINATE.selection.hidden = true;
-  COORDINATE.main.hidden = false;
+  hideElement('.selection');
+  showElement('.main');
   shortestPathGroup.clearLayers();
   listSelection = [];
   COORDINATE.elevationNullAction.value = "";
 });
 
 button.new.addEventListener('click', function(){
-  COORDINATE.selection.hidden = true;
-  COORDINATE.main.hidden = false;
+  hideElement('.selection');
+  showElement('.main');
   clearInput();
   markerGroup.clearLayers();
   shortestPathGroup.clearLayers();

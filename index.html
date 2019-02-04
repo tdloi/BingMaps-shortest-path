@@ -25,7 +25,7 @@
         <div>
           <label for="elevation">Elevation</label>
           <input type="number" name="elevation" class="coordinates__elevation" min="1" max="2000"> m
-          <p class="error coordinates__elevation__error"></p>
+          <p class="error"></p>
           <input type="hidden" value="" class="coordinates__elevation__action">
         </div>
         <div>
@@ -34,44 +34,43 @@
         </div>
         <div>
           <label for="coordinates-list">List of coordinates:</label>
-          <p class="error coordinates__list__error"></p>
+          <p class="error"></p>
           <textarea type="text"
                     class="coordinates__list"
                     name="coordinates-list"
                     placeholder="Each row contains one coordinates, each value seperate by space&#10;Name  Latitude  Lontitude&#10;Ex: Can Tho 10.1 100.1"
-                    rows="17"
+                    rows="15"
                     wrap="soft" required ></textarea>
           <a class="export-csv" download="data.csv">Export data to csv</a>
         </div>
         <div class="function-area">
-          <button class="main__button main__button--green main__button__proceed">Proceed</button>
-          <button class="main__button main__button--red main__button__clear">Clear</button>
+          <button data-action="proceed" class="button green">Proceed</button>
+          <button data-action="clear" class="button red">Clear</button>
         </div>
       </div>
 
       <div class="elevation-action" hidden>
-        <button class="main__button main__button--red main__button__cancel"> Cancel </button>
+        <button data-action="close" class="button red fullwidth"> Cancel </button>
 
         <div>Some coordinates are missing elevation value, please choose your action:</div>
 
         <span>Use minimum value of all valid elevation value</span>
-        <button data-action="min" class="main__button items">Use MIN value</button>
+        <button data-action="min" class="button fullwidth items">Use MIN value</button>
         <span>Use maximum value of all valid elevation value</span>
-        <button data-action="max" class="main__button items">Use MAX value</button>
+        <button data-action="max" class="button fullwidth items">Use MAX value</button>
         <span>Load value from
           <a target="_blank" href="https://open-elevation.com/">Open Elevation API</a>
         </span>
-        <button data-action="api" class="main__button items">Load from API</button>
+        <button data-action="api" class="button fullwidth items">Load from API</button>
       </div>
       <div class="selection" hidden>
         <div class="function-area">
-          <button class="main__button main__button--green main__button__back">Back</button>
-          <button class="main__button main__button--red main__button__new">New</button>
+          <button class="button green main__button__back">Back</button>
+          <button class="button red main__button__new">New</button>
         </div>
         <p class="error selection__error"></p>
-        <div class="selection__list">
 
-        </div>
+        <div class="selection__list"> </div>
       </div>
     </main>
   </div>

@@ -76,7 +76,7 @@ input[type=number]::-webkit-outer-spin-button {
   display: flex;
   justify-content: space-around;
 }
-.main__button {
+.button {
   margin: 1rem;
   padding: 0.5em 2rem;
   background-color: whitesmoke;
@@ -84,23 +84,27 @@ input[type=number]::-webkit-outer-spin-button {
   border: solid 2px transparent;
 }
 
-.main__button--green {
+.button.green {
   background: #4ddb7f;
   border-color: #4ddb7f;
 }
-.main__button--green:focus,
-.main__button--green:active {
+.button.green:focus,
+.button.green:active {
   background: #30bb61;
 }
 
-.main__button--red {
+.button.red {
   background: rgb(231, 117, 117);
   border-color: rgb(231, 117, 117);
 }
-.main__button--red:focus,
-.main__button--red:active {
+.button.red:focus,
+.button.red:active {
   background: rgb(224, 88, 88);
 }
+
+.button.fullwidth {
+  width: 90%;
+ }
 
 .error {
   margin: 0.2rem;
@@ -141,11 +145,6 @@ input:invalid:focus {
 
 .elevation-action span {
   padding-bottom: -1rem;
-}
-
-.elevation-action .main__button {
-  width: 90%;
-  height: 3rem;
 }
 
 .export-csv {
